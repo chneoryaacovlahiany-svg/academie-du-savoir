@@ -234,6 +234,7 @@ export default function Calendrier() {
 
   const employeeCourant = employees.find((e) => String(e.id) === employeeId);
   const pauseMinutesCourant = employeeCourant?.pause_minutes || 0;
+  const joursManquantsParDate = Object.fromEntries((resume?.jours_manquants || []).map((j) => [j.date, j]));
 
   return (
     <div className="panel">
@@ -302,12 +303,14 @@ export default function Calendrier() {
               const p = pointagesMois[dateStr];
               const jour = Number(dateStr.slice(-2));
               const selectionne = dateStr === dateSelectionnee;
+              const manquant = joursManquantsParDate[dateStr];
               return (
                 <button
                   key={dateStr}
-                  className={`calendrier-jour ${p ? 'calendrier-jour-pointe' : ''} ${selectionne ? 'calendrier-jour-selectionne' : ''}`}
+                  className={`calendrier-jour ${p ? 'calendrier-jour-pointe' : ''} ${selectionne ? 'calendrier-jour-selectionne' : ''} ${manquant ? 'calendrier-jour-manquant' : ''}`}
                   onClick={() => selectionnerJour(dateStr)}
                   type="button"
+                  title={manquant ? `Il manque ${formatDuree(manquant.ecart)} par rapport a la plage prevue` : undefined}
                 >
                   <span className="calendrier-jour-numero">{jour}</span>
                   <span className="calendrier-jour-detail">
@@ -317,6 +320,7 @@ export default function Calendrier() {
                       ? 'incomplet'
                       : ''}
                   </span>
+                  {manquant && <span className="calendrier-jour-manque">-{formatDuree(manquant.ecart)}</span>}
                 </button>
               );
             })}
@@ -347,8 +351,13 @@ export default function Calendrier() {
               {joursDuMoisTries.map((dateStr) => {
                 const p = pointagesMois[dateStr];
                 const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' });
+                const manquant = joursManquantsParDate[dateStr];
+                const classesLigne = [
+                  dateStr === dateSelectionnee ? 'ligne-selectionnee' : '',
+                  manquant ? 'ligne-manquante' : '',
+                ].join(' ');
                 return (
-                  <tr key={dateStr} className={dateStr === dateSelectionnee ? 'ligne-selectionnee' : ''}>
+                  <tr key={dateStr} className={classesLigne}>
                     <td>
                       <input
                         type="checkbox"
@@ -361,7 +370,10 @@ export default function Calendrier() {
                     <td>{p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-'}</td>
                     <td>{p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-'}</td>
                     <td>{p?.heures_travaillees != null ? `${pauseMinutesCourant} min` : '-'}</td>
-                    <td>{formatDuree(dureeNetteDePause(p?.heures_travaillees, pauseMinutesCourant))}</td>
+                    <td>
+                      {formatDuree(dureeNetteDePause(p?.heures_travaillees, pauseMinutesCourant))}
+                      {manquant && <span className="badge-manquant"> -{formatDuree(manquant.ecart)}</span>}
+                    </td>
                     <td className="actions">
                       <button onClick={() => selectionnerJour(dateStr)}>Modifier</button>
                     </td>

@@ -468,6 +468,27 @@ button.sortie:hover {
   box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
 }
 
+.calendrier-jour-manquant {
+  background: #fbe3e3;
+  border-color: #f3b6b6;
+}
+
+.calendrier-jour-manque {
+  font-size: 10px;
+  font-weight: 700;
+  color: #d03b3b;
+}
+
+.ligne-manquante {
+  background: #fef2f2;
+}
+
+.badge-manquant {
+  color: #d03b3b;
+  font-weight: 700;
+  font-size: 12px;
+}
+
 .panneau-edition-jour {
   margin-top: 20px;
   padding: 16px;

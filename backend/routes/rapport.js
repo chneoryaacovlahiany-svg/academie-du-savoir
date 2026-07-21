@@ -85,14 +85,15 @@ router.get('/', (req, res) => {
     const totalHeures = Object.values(heuresEffectivesParDate).reduce((acc, h) => acc + h, 0);
     const joursTravailles = pointages.filter((p) => p.heures_travaillees != null).length;
 
-    // Salaire fixe: si une plage horaire est definie pour l'employe, un ecart entre
-    // les heures prevues et les heures reellement payees (retard, depart anticipe)
-    // est deduit du salaire. Ne s'applique qu'aux jours ou l'employe a pointe
-    // (une absence totale sans pointage n'est PAS deduite ici: c'est un cas separe,
-    // a gerer via une demande de conge/absence si necessaire).
-    let montantDeduction = 0;
-    let heuresManquantes = 0;
-    if (estMensuel && horaires.length > 0) {
+    // Ecart entre heures prevues (plage horaire, pause deduite) et heures
+    // reellement payees, jour par jour. Ne concerne que les jours ou l'employe
+    // a pointe (une absence totale sans pointage n'est pas comptee ici: c'est
+    // un cas separe, a gerer via une demande de conge/absence si necessaire),
+    // et exclut les jours de conge/maladie approuves et les jours feries.
+    // Calcule pour tous les types de paie (utile pour le reperer dans le
+    // Calendrier); seul le salaire fixe le deduit reellement du montant.
+    const joursManquants = [];
+    if (horaires.length > 0) {
       for (const p of pointages) {
         if (p.heures_travaillees == null) continue;
         const horaireJour = horaireParJour[jourSemaineLundi0(p.date)];
@@ -103,10 +104,19 @@ router.get('/', (req, res) => {
         const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes);
         if (heuresPrevues <= 0) continue;
         const ecart = Math.max(0, heuresPrevues - heuresEffectivesParDate[p.date]);
-        heuresManquantes += ecart;
-        montantDeduction += ecart * emp.taux_horaire;
+        if (ecart > 0.001) {
+          joursManquants.push({
+            date: p.date,
+            heures_prevues: Math.round(heuresPrevues * 100) / 100,
+            heures_effectives: Math.round(heuresEffectivesParDate[p.date] * 100) / 100,
+            ecart: Math.round(ecart * 100) / 100,
+          });
+        }
       }
     }
+    const heuresManquantesTotal = joursManquants.reduce((acc, j) => acc + j.ecart, 0);
+    const montantDeduction = estMensuel ? heuresManquantesTotal * emp.taux_horaire : 0;
+    const heuresManquantes = estMensuel ? heuresManquantesTotal : 0;
 
     // Salaire fixe: les conges payes sont deja inclus dans le salaire mensuel.
     // Taux horaire: seules les heures payees sont comptees, les conges payes s'ajoutent en plus.
@@ -155,6 +165,7 @@ router.get('/', (req, res) => {
       solde_conges_disponible: Math.round(soldeCongesPayes(emp, fin) * 100) / 100,
       solde_maladie_disponible: Math.round(soldeMaladie(emp, fin) * 100) / 100,
       heures_manquantes: Math.round(heuresManquantes * 100) / 100,
+      jours_manquants: joursManquants,
       montant_travail: Math.round(montantTravail * 100) / 100,
       montant_conges: Math.round(montantConges * 100) / 100,
       montant_maladie: Math.round(montantMaladie * 100) / 100,
