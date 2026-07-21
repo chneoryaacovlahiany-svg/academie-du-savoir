@@ -1,11 +1,15 @@
+const fs = require('fs');
 const path = require('path');
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 
-const dbPath = path.join(__dirname, 'data', 'pointeuse.db');
-const db = new Database(dbPath);
+const dataDir = path.join(__dirname, 'data');
+fs.mkdirSync(dataDir, { recursive: true });
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+const dbPath = path.join(dataDir, 'pointeuse.db');
+const db = new DatabaseSync(dbPath);
+
+db.exec('PRAGMA journal_mode = WAL');
+db.exec('PRAGMA foreign_keys = ON');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS employees (
