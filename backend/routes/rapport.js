@@ -55,15 +55,22 @@ router.get('/', (req, res) => {
       .reduce((acc, c) => acc + c.nb_jours, 0);
 
     const heuresJourStandard = 8;
-    const montantTravail = totalHeures * emp.taux_horaire;
-    const montantConges = joursCongesPayes * heuresJourStandard * emp.taux_horaire;
+    const estMensuel = emp.type_paie === 'mensuel' && emp.salaire_mensuel;
+
+    // Salaire fixe: les conges payes sont deja inclus dans le salaire mensuel.
+    // Taux horaire: seules les heures pointees sont payees, les conges payes s'ajoutent en plus.
+    const montantTravail = estMensuel ? emp.salaire_mensuel : totalHeures * emp.taux_horaire;
+    const montantConges = estMensuel ? 0 : joursCongesPayes * heuresJourStandard * emp.taux_horaire;
     const montantTotal = montantTravail + montantConges;
 
     return {
       employee_id: emp.id,
       nom: emp.nom,
       prenom: emp.prenom,
+      type_paie: emp.type_paie,
       taux_horaire: emp.taux_horaire,
+      salaire_mensuel: emp.salaire_mensuel,
+      heures_semaine: emp.heures_semaine,
       periode: { debut, fin },
       total_heures: Math.round(totalHeures * 100) / 100,
       jours_travailles: joursTravailles,

@@ -1,9 +1,28 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useDevise } from '../DeviseContext.jsx';
 
-const EMPLOYE_VIDE = { nom: '', prenom: '', poste: '', taux_horaire: '', solde_conges: '0' };
+const SEMAINES_PAR_MOIS = 52 / 12;
+
+const EMPLOYE_VIDE = {
+  nom: '',
+  prenom: '',
+  poste: '',
+  type_paie: 'horaire',
+  taux_horaire: '',
+  salaire_mensuel: '',
+  heures_semaine: '35',
+  solde_conges: '0',
+};
+
+function tauxHoraireCalcule(form) {
+  const heuresMensuelles = Number(form.heures_semaine) * SEMAINES_PAR_MOIS;
+  if (!heuresMensuelles) return 0;
+  return Number(form.salaire_mensuel) / heuresMensuelles;
+}
 
 export default function Employees() {
+  const { formatMontant } = useDevise();
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState(EMPLOYE_VIDE);
   const [editingId, setEditingId] = useState(null);
@@ -22,9 +41,14 @@ export default function Employees() {
     setErreur('');
     try {
       const payload = {
-        ...form,
-        taux_horaire: Number(form.taux_horaire),
+        nom: form.nom,
+        prenom: form.prenom,
+        poste: form.poste,
+        type_paie: form.type_paie,
         solde_conges: Number(form.solde_conges),
+        ...(form.type_paie === 'mensuel'
+          ? { salaire_mensuel: Number(form.salaire_mensuel), heures_semaine: Number(form.heures_semaine) }
+          : { taux_horaire: Number(form.taux_horaire) }),
       };
       if (editingId) {
         await api.updateEmployee(editingId, payload);
@@ -45,7 +69,10 @@ export default function Employees() {
       nom: emp.nom,
       prenom: emp.prenom,
       poste: emp.poste || '',
+      type_paie: emp.type_paie || 'horaire',
       taux_horaire: String(emp.taux_horaire),
+      salaire_mensuel: emp.salaire_mensuel != null ? String(emp.salaire_mensuel) : '',
+      heures_semaine: emp.heures_semaine != null ? String(emp.heures_semaine) : '35',
       solde_conges: String(emp.solde_conges),
     });
   };
@@ -64,16 +91,49 @@ export default function Employees() {
         <input name="nom" placeholder="Nom" value={form.nom} onChange={handleChange} required />
         <input name="prenom" placeholder="Prenom" value={form.prenom} onChange={handleChange} required />
         <input name="poste" placeholder="Poste" value={form.poste} onChange={handleChange} />
-        <input
-          name="taux_horaire"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="Taux horaire (EUR)"
-          value={form.taux_horaire}
-          onChange={handleChange}
-          required
-        />
+
+        <select name="type_paie" value={form.type_paie} onChange={handleChange}>
+          <option value="horaire">Taux horaire</option>
+          <option value="mensuel">Salaire mensuel fixe</option>
+        </select>
+
+        {form.type_paie === 'horaire' ? (
+          <input
+            name="taux_horaire"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Taux horaire"
+            value={form.taux_horaire}
+            onChange={handleChange}
+            required
+          />
+        ) : (
+          <>
+            <input
+              name="salaire_mensuel"
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Salaire mensuel fixe"
+              value={form.salaire_mensuel}
+              onChange={handleChange}
+              required
+            />
+            <input
+              name="heures_semaine"
+              type="number"
+              step="0.5"
+              min="0"
+              placeholder="Heures par semaine"
+              value={form.heures_semaine}
+              onChange={handleChange}
+              required
+            />
+            <span className="taux-calcule">Taux horaire calcule: {formatMontant(tauxHoraireCalcule(form))}/h</span>
+          </>
+        )}
+
         <input
           name="solde_conges"
           type="number"
@@ -105,6 +165,7 @@ export default function Employees() {
             <th>Nom</th>
             <th>Prenom</th>
             <th>Poste</th>
+            <th>Mode de paie</th>
             <th>Taux horaire</th>
             <th>Solde conges</th>
             <th>Statut</th>
@@ -117,7 +178,12 @@ export default function Employees() {
               <td>{emp.nom}</td>
               <td>{emp.prenom}</td>
               <td>{emp.poste}</td>
-              <td>{emp.taux_horaire.toFixed(2)} EUR/h</td>
+              <td>
+                {emp.type_paie === 'mensuel'
+                  ? `Mensuel fixe (${formatMontant(emp.salaire_mensuel)}, ${emp.heures_semaine}h/sem)`
+                  : 'Horaire'}
+              </td>
+              <td>{formatMontant(emp.taux_horaire)}/h</td>
               <td>{emp.solde_conges} j</td>
               <td>{emp.actif ? 'Actif' : 'Inactif'}</td>
               <td className="actions">
@@ -130,7 +196,7 @@ export default function Employees() {
           ))}
           {employees.length === 0 && (
             <tr>
-              <td colSpan={7} className="vide">
+              <td colSpan={8} className="vide">
                 Aucun employe pour le moment
               </td>
             </tr>

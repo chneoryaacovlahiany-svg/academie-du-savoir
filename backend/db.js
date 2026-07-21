@@ -17,7 +17,10 @@ db.exec(`
     nom TEXT NOT NULL,
     prenom TEXT NOT NULL,
     poste TEXT,
+    type_paie TEXT NOT NULL DEFAULT 'horaire',
     taux_horaire REAL NOT NULL DEFAULT 0,
+    salaire_mensuel REAL,
+    heures_semaine REAL,
     solde_conges REAL NOT NULL DEFAULT 0,
     actif INTEGER NOT NULL DEFAULT 1,
     date_creation TEXT NOT NULL DEFAULT (datetime('now'))
@@ -44,5 +47,16 @@ db.exec(`
     commentaire TEXT
   );
 `);
+
+const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);
+if (!colonnesEmployees.includes('type_paie')) {
+  db.exec("ALTER TABLE employees ADD COLUMN type_paie TEXT NOT NULL DEFAULT 'horaire'");
+}
+if (!colonnesEmployees.includes('salaire_mensuel')) {
+  db.exec('ALTER TABLE employees ADD COLUMN salaire_mensuel REAL');
+}
+if (!colonnesEmployees.includes('heures_semaine')) {
+  db.exec('ALTER TABLE employees ADD COLUMN heures_semaine REAL');
+}
 
 module.exports = db;

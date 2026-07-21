@@ -15,9 +15,29 @@ body {
   padding: 24px;
 }
 
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 28px;
+}
+
+.selecteur-devise {
+  font-size: 14px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.taux-calcule {
+  font-size: 13px;
+  color: #16a34a;
+  font-weight: 600;
 }
 
 .subtitle {

@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useDevise } from '../DeviseContext.jsx';
 
 function moisCourant() {
   return new Date().toISOString().slice(0, 7);
 }
 
 export default function Rapport() {
+  const { formatMontant } = useDevise();
   const [mois, setMois] = useState(moisCourant());
   const [rapport, setRapport] = useState([]);
   const [erreur, setErreur] = useState('');
@@ -44,6 +46,7 @@ export default function Rapport() {
         <thead>
           <tr>
             <th>Employe</th>
+            <th>Mode de paie</th>
             <th>Taux horaire</th>
             <th>Jours travailles</th>
             <th>Heures travaillees</th>
@@ -59,18 +62,19 @@ export default function Rapport() {
               <td>
                 {r.prenom} {r.nom}
               </td>
-              <td>{r.taux_horaire.toFixed(2)} EUR/h</td>
+              <td>{r.type_paie === 'mensuel' ? 'Mensuel fixe' : 'Horaire'}</td>
+              <td>{formatMontant(r.taux_horaire)}/h</td>
               <td>{r.jours_travailles}</td>
               <td>{r.total_heures.toFixed(2)} h</td>
               <td>{r.jours_conges_payes}</td>
-              <td>{r.montant_travail.toFixed(2)} EUR</td>
-              <td>{r.montant_conges.toFixed(2)} EUR</td>
-              <td className="montant-total">{r.montant_total.toFixed(2)} EUR</td>
+              <td>{formatMontant(r.montant_travail)}</td>
+              <td>{formatMontant(r.montant_conges)}</td>
+              <td className="montant-total">{formatMontant(r.montant_total)}</td>
             </tr>
           ))}
           {rapport.length === 0 && (
             <tr>
-              <td colSpan={8} className="vide">
+              <td colSpan={9} className="vide">
                 Aucune donnee pour ce mois
               </td>
             </tr>
@@ -79,7 +83,7 @@ export default function Rapport() {
         {rapport.length > 0 && (
           <tfoot>
             <tr>
-              <td colSpan={3}>
+              <td colSpan={4}>
                 <strong>Total</strong>
               </td>
               <td>
@@ -87,7 +91,7 @@ export default function Rapport() {
               </td>
               <td colSpan={3}></td>
               <td className="montant-total">
-                <strong>{totalGeneral.toFixed(2)} EUR</strong>
+                <strong>{formatMontant(totalGeneral)}</strong>
               </td>
             </tr>
           </tfoot>
