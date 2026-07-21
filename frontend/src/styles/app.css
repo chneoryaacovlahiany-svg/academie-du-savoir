@@ -467,3 +467,25 @@ button.sortie:hover {
   margin-top: 0;
   text-transform: capitalize;
 }
+
+.selecteur-vue {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.selecteur-vue button {
+  padding: 8px 14px;
+}
+
+.vue-active {
+  background: #1d4ed8;
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+.ligne-selectionnee {
+  background: #eff6ff;
+}

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Dashboard from './components/Dashboard.jsx';
 import Employees from './components/Employees.jsx';
 import Pointage from './components/Pointage.jsx';
+import Calendrier from './components/Calendrier.jsx';
 import Conges from './components/Conges.jsx';
 import Rapport from './components/Rapport.jsx';
 import Parametres from './components/Parametres.jsx';
@@ -10,6 +11,7 @@ import { DEVISES, useDevise } from './DeviseContext.jsx';
 const ONGLETS = [
   { id: 'dashboard', label: 'Tableau de bord' },
   { id: 'pointage', label: 'Pointage' },
+  { id: 'calendrier', label: 'Calendrier' },
   { id: 'employes', label: 'Employes' },
   { id: 'conges', label: 'Conges' },
   { id: 'rapport', label: 'Rapport & Paie' },
@@ -54,6 +56,7 @@ export default function App() {
       <main className="content">
         {onglet === 'dashboard' && <Dashboard />}
         {onglet === 'pointage' && <Pointage />}
+        {onglet === 'calendrier' && <Calendrier />}
         {onglet === 'employes' && <Employees />}
         {onglet === 'conges' && <Conges />}
         {onglet === 'rapport' && <Rapport />}
