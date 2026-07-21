@@ -5,6 +5,13 @@ import { dateLocale as aujourdhui } from '../dateUtils';
 
 const SEMAINES_PAR_MOIS = 52 / 12;
 
+const JOURS_SEMAINE_NOMS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+
+function horaireParDefaut(jourSemaine) {
+  const jourOuvre = jourSemaine <= 4; // Lundi a Vendredi par defaut
+  return { jour_semaine: jourSemaine, heure_debut: '09:00', heure_fin: '17:00', actif: jourOuvre };
+}
+
 const EMPLOYE_VIDE = {
   nom: '',
   prenom: '',
@@ -29,6 +36,10 @@ export default function Employees() {
   const [form, setForm] = useState(EMPLOYE_VIDE);
   const [editingId, setEditingId] = useState(null);
   const [erreur, setErreur] = useState('');
+
+  const [horaireEmployeeId, setHoraireEmployeeId] = useState(null);
+  const [horaireLignes, setHoraireLignes] = useState([]);
+  const [messageHoraire, setMessageHoraire] = useState('');
 
   const charger = () => api.getEmployees().then(setEmployees).catch((e) => setErreur(e.message));
 
@@ -85,6 +96,46 @@ export default function Employees() {
     if (!confirm('Supprimer cet employe et tout son historique ?')) return;
     await api.deleteEmployee(id);
     charger();
+  };
+
+  const ouvrirHoraires = async (emp) => {
+    setErreur('');
+    setMessageHoraire('');
+    setHoraireEmployeeId(emp.id);
+    const existants = await api.getHoraires(emp.id);
+    const parJour = Object.fromEntries(existants.map((h) => [h.jour_semaine, h]));
+    const lignes = [];
+    for (let jour = 0; jour <= 6; jour++) {
+      const existant = parJour[jour];
+      lignes.push(
+        existant
+          ? {
+              jour_semaine: jour,
+              heure_debut: existant.heure_debut || '09:00',
+              heure_fin: existant.heure_fin || '17:00',
+              actif: !!existant.actif,
+            }
+          : horaireParDefaut(jour)
+      );
+    }
+    setHoraireLignes(lignes);
+  };
+
+  const modifierLigneHoraire = (jour, champ, valeur) => {
+    setHoraireLignes((lignes) =>
+      lignes.map((l) => (l.jour_semaine === jour ? { ...l, [champ]: valeur } : l))
+    );
+  };
+
+  const enregistrerHoraires = async () => {
+    setErreur('');
+    setMessageHoraire('');
+    try {
+      await api.updateHoraires(horaireEmployeeId, horaireLignes);
+      setMessageHoraire('Plage horaire enregistree.');
+    } catch (err) {
+      setErreur(err.message);
+    }
   };
 
   return (
@@ -207,6 +258,9 @@ export default function Employees() {
               <td>{emp.actif ? 'Actif' : 'Inactif'}</td>
               <td className="actions">
                 <button onClick={() => handleEdit(emp)}>Modifier</button>
+                <button className="secondary" onClick={() => ouvrirHoraires(emp)}>
+                  Horaires
+                </button>
                 <button className="danger" onClick={() => handleDelete(emp.id)}>
                   Supprimer
                 </button>
@@ -223,6 +277,69 @@ export default function Employees() {
         </tbody>
       </table>
       </div>
+
+      {horaireEmployeeId && (
+        <div className="panneau-edition-jour">
+          <h4>
+            Plage horaire de {(() => {
+              const emp = employees.find((e) => e.id === horaireEmployeeId);
+              return emp ? `${emp.prenom} ${emp.nom}` : '';
+            })()}
+          </h4>
+          <p className="aide">
+            Pour les employes au salaire mensuel fixe, un ecart entre ces heures et les heures
+            reellement pointees (retard, depart anticipe, absence non justifiee) sera deduit du
+            salaire dans le Rapport & Paie.
+          </p>
+          {messageHoraire && <p className="confirmation">{messageHoraire}</p>}
+          <table>
+            <thead>
+              <tr>
+                <th>Jour</th>
+                <th>Travaille</th>
+                <th>Heure debut</th>
+                <th>Heure fin</th>
+              </tr>
+            </thead>
+            <tbody>
+              {horaireLignes.map((ligne) => (
+                <tr key={ligne.jour_semaine}>
+                  <td>{JOURS_SEMAINE_NOMS[ligne.jour_semaine]}</td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={ligne.actif}
+                      onChange={(e) => modifierLigneHoraire(ligne.jour_semaine, 'actif', e.target.checked)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="time"
+                      value={ligne.heure_debut}
+                      disabled={!ligne.actif}
+                      onChange={(e) => modifierLigneHoraire(ligne.jour_semaine, 'heure_debut', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="time"
+                      value={ligne.heure_fin}
+                      disabled={!ligne.actif}
+                      onChange={(e) => modifierLigneHoraire(ligne.jour_semaine, 'heure_fin', e.target.value)}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="form-inline">
+            <button onClick={enregistrerHoraires}>Enregistrer</button>
+            <button className="secondary" onClick={() => setHoraireEmployeeId(null)}>
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

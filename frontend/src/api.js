@@ -73,4 +73,9 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return request(`/dashboard${qs ? `?${qs}` : ''}`);
   },
+
+  // Horaires de travail (par employe)
+  getHoraires: (employee_id) => request(`/horaires?employee_id=${employee_id}`),
+  updateHoraires: (employee_id, lignes) =>
+    request('/horaires', { method: 'PUT', body: JSON.stringify({ employee_id, lignes }) }),
 };

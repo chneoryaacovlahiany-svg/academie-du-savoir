@@ -63,6 +63,16 @@ db.exec(`
     date TEXT NOT NULL UNIQUE,
     nom TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS horaires_travail (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    jour_semaine INTEGER NOT NULL,
+    heure_debut TEXT,
+    heure_fin TEXT,
+    actif INTEGER NOT NULL DEFAULT 1,
+    UNIQUE(employee_id, jour_semaine)
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);

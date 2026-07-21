@@ -96,6 +96,31 @@ function estJourOuvre(dateStr) {
   return jour >= 1 && jour <= 5;
 }
 
+// Liste des dates YYYY-MM-DD entre debut et fin inclus.
+function datesEntre(debut, fin) {
+  const dates = [];
+  const curseur = new Date(`${debut}T00:00:00`);
+  const limite = new Date(`${fin}T00:00:00`);
+  while (curseur <= limite) {
+    dates.push(dateLocale(curseur));
+    curseur.setDate(curseur.getDate() + 1);
+  }
+  return dates;
+}
+
+// Lundi = 0 ... Dimanche = 6 (coherent avec le calendrier de l'interface).
+function jourSemaineLundi0(dateStr) {
+  return (new Date(`${dateStr}T00:00:00`).getDay() + 6) % 7;
+}
+
+// Duree prevue (en heures) entre deux horaires "HH:MM".
+function heuresPrevuesJour(heureDebut, heureFin) {
+  if (!heureDebut || !heureFin) return 0;
+  const [h1, m1] = heureDebut.split(':').map(Number);
+  const [h2, m2] = heureFin.split(':').map(Number);
+  return Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+}
+
 module.exports = {
   dateLocale,
   ancienneteAnnees,
@@ -105,4 +130,7 @@ module.exports = {
   montantMaladiePourAbsence,
   supplementHeuresSup,
   estJourOuvre,
+  datesEntre,
+  jourSemaineLundi0,
+  heuresPrevuesJour,
 };

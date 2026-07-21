@@ -51,7 +51,9 @@ export default function Rapport() {
               <th>Feries payes (j)</th>
               <th>Solde conges</th>
               <th>Solde maladie</th>
+              <th>Heures manquantes</th>
               <th>Montant travail</th>
+              <th>Deduction horaire</th>
               <th>Montant conges</th>
               <th>Montant maladie</th>
               <th>Montant heures sup</th>
@@ -72,7 +74,9 @@ export default function Rapport() {
                 <td>{r.jours_feries_payes}</td>
                 <td>{r.solde_conges_disponible} j</td>
                 <td>{r.solde_maladie_disponible} j</td>
+                <td>{r.heures_manquantes > 0 ? `${r.heures_manquantes.toFixed(2)} h` : '-'}</td>
                 <td>{formatMontant(r.montant_travail)}</td>
+                <td>{r.montant_deduction_horaire > 0 ? `-${formatMontant(r.montant_deduction_horaire)}` : '-'}</td>
                 <td>{formatMontant(r.montant_conges)}</td>
                 <td>{formatMontant(r.montant_maladie)}</td>
                 <td>{formatMontant(r.montant_heures_sup)}</td>
@@ -82,7 +86,7 @@ export default function Rapport() {
             ))}
             {rapport.length === 0 && (
               <tr>
-                <td colSpan={14} className="vide">
+                <td colSpan={16} className="vide">
                   Aucune donnee pour ce mois
                 </td>
               </tr>
@@ -97,7 +101,7 @@ export default function Rapport() {
                 <td>
                   <strong>{totalHeures.toFixed(2)} h</strong>
                 </td>
-                <td colSpan={8}></td>
+                <td colSpan={10}></td>
                 <td className="montant-total">
                   <strong>{formatMontant(totalGeneral)}</strong>
                 </td>

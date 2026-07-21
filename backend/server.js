@@ -11,6 +11,7 @@ const parametresRouter = require('./routes/parametres');
 const baremeRouter = require('./routes/bareme');
 const feriesRouter = require('./routes/feries');
 const dashboardRouter = require('./routes/dashboard');
+const horairesRouter = require('./routes/horaires');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -28,6 +29,7 @@ app.use('/api/parametres', parametresRouter);
 app.use('/api/bareme', baremeRouter);
 app.use('/api/feries', feriesRouter);
 app.use('/api/dashboard', dashboardRouter);
+app.use('/api/horaires', horairesRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);
