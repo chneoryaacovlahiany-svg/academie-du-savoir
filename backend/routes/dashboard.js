@@ -1,6 +1,6 @@
 const express = require('express');
 const db = require('../db');
-const { joursAnnuelsAcquis, ancienneteAnnees } = require('../calculs');
+const { joursAnnuelsAcquis, ancienneteAnnees, dateLocale } = require('../calculs');
 const { chargerBareme, soldeCongesPayes, soldeMaladie } = require('../soldes');
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const router = express.Router();
 const MULTIPLICATEUR_EXCEDENT = 2;
 
 router.get('/', (req, res) => {
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const aujourdhui = dateLocale();
   const annee = req.query.annee || aujourdhui.slice(0, 4);
   const debutAnnee = `${annee}-01-01`;
   const finAnnee = `${annee}-12-31`;

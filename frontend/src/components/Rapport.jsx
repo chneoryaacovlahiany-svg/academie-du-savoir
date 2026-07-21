@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
-
-function moisCourant() {
-  return new Date().toISOString().slice(0, 7);
-}
+import { moisLocal as moisCourant } from '../dateUtils';
 
 export default function Rapport() {
   const { formatMontant } = useDevise();

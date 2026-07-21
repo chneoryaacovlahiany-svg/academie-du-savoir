@@ -1,13 +1,14 @@
 const express = require('express');
 const db = require('../db');
 const { soldeCongesPayes, soldeMaladie } = require('../soldes');
+const { dateLocale } = require('../calculs');
 
 const router = express.Router();
 
 const SEMAINES_PAR_MOIS = 52 / 12;
 
 function ajouterSoldesCalcules(employee) {
-  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const aujourdhui = dateLocale();
   return {
     ...employee,
     solde_conges_disponible: Math.round(soldeCongesPayes(employee, aujourdhui) * 100) / 100,
@@ -79,7 +80,7 @@ router.post('/', (req, res) => {
       remuneration.salaire_mensuel,
       remuneration.heures_semaine,
       Number(solde_conges) || 0,
-      date_embauche || new Date().toISOString().slice(0, 10)
+      date_embauche || dateLocale()
     );
   const created = db.prepare('SELECT * FROM employees WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(ajouterSoldesCalcules(created));

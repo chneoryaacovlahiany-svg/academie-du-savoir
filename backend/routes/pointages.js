@@ -1,10 +1,11 @@
 const express = require('express');
 const db = require('../db');
+const { dateLocale } = require('../calculs');
 
 const router = express.Router();
 
 function todayDate() {
-  return new Date().toISOString().slice(0, 10);
+  return dateLocale();
 }
 
 function nowTime() {

@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
+import { dateLocale as aujourdhui } from '../dateUtils';
 
 const SEMAINES_PAR_MOIS = 52 / 12;
-
-function aujourdhui() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 const EMPLOYE_VIDE = {
   nom: '',

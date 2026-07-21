@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { dateLocale, moisLocal } from '../dateUtils';
 
 const JOURS_SEMAINE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -19,10 +20,6 @@ function isoToTimeInput(iso) {
 function timeInputToIso(dateStr, timeStr) {
   if (!timeStr) return null;
   return new Date(`${dateStr}T${timeStr}:00`).toISOString();
-}
-
-function moisCourant() {
-  return new Date().toISOString().slice(0, 7);
 }
 
 function joursDuMois(mois) {
@@ -45,7 +42,7 @@ function listeDatesEntre(debut, fin) {
   const curseur = new Date(`${debut}T00:00:00`);
   const limite = new Date(`${fin}T00:00:00`);
   while (curseur <= limite) {
-    dates.push(curseur.toISOString().slice(0, 10));
+    dates.push(dateLocale(curseur));
     curseur.setDate(curseur.getDate() + 1);
   }
   return dates;
@@ -54,7 +51,7 @@ function listeDatesEntre(debut, fin) {
 export default function Calendrier() {
   const [employees, setEmployees] = useState([]);
   const [employeeId, setEmployeeId] = useState('');
-  const [mois, setMois] = useState(moisCourant());
+  const [mois, setMois] = useState(moisLocal());
   const [vue, setVue] = useState('calendrier');
   const [pointagesMois, setPointagesMois] = useState({});
   const [dateSelectionnee, setDateSelectionnee] = useState(null);

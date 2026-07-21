@@ -1,6 +1,17 @@
 const JOUR_MS = 1000 * 60 * 60 * 24;
 const ANNEE_MS = JOUR_MS * 365.25;
 
+// Date du jour (ou d'un objet Date donne) au format YYYY-MM-DD en heure LOCALE.
+// A utiliser partout ou on veut "la date du jour" plutot qu'un instant UTC:
+// date.toISOString().slice(0, 10) decale d'un jour pour les fuseaux devant UTC
+// (ex: Israel) pendant les premieres heures de la journee locale.
+function dateLocale(date = new Date()) {
+  const annee = date.getFullYear();
+  const mois = String(date.getMonth() + 1).padStart(2, '0');
+  const jour = String(date.getDate()).padStart(2, '0');
+  return `${annee}-${mois}-${jour}`;
+}
+
 function ancienneteAnnees(dateEmbauche, dateRef) {
   if (!dateEmbauche) return 0;
   const diff = new Date(dateRef).getTime() - new Date(dateEmbauche).getTime();
@@ -86,6 +97,7 @@ function estJourOuvre(dateStr) {
 }
 
 module.exports = {
+  dateLocale,
   ancienneteAnnees,
   joursAnnuelsAcquis,
   joursCongesAcquisCumules,
