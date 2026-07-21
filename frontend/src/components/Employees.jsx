@@ -4,6 +4,10 @@ import { useDevise } from '../DeviseContext.jsx';
 
 const SEMAINES_PAR_MOIS = 52 / 12;
 
+function aujourdhui() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 const EMPLOYE_VIDE = {
   nom: '',
   prenom: '',
@@ -13,6 +17,7 @@ const EMPLOYE_VIDE = {
   salaire_mensuel: '',
   heures_semaine: '35',
   solde_conges: '0',
+  date_embauche: aujourdhui(),
 };
 
 function tauxHoraireCalcule(form) {
@@ -46,6 +51,7 @@ export default function Employees() {
         poste: form.poste,
         type_paie: form.type_paie,
         solde_conges: Number(form.solde_conges),
+        date_embauche: form.date_embauche,
         ...(form.type_paie === 'mensuel'
           ? { salaire_mensuel: Number(form.salaire_mensuel), heures_semaine: Number(form.heures_semaine) }
           : { taux_horaire: Number(form.taux_horaire) }),
@@ -74,6 +80,7 @@ export default function Employees() {
       salaire_mensuel: emp.salaire_mensuel != null ? String(emp.salaire_mensuel) : '',
       heures_semaine: emp.heures_semaine != null ? String(emp.heures_semaine) : '35',
       solde_conges: String(emp.solde_conges),
+      date_embauche: emp.date_embauche || aujourdhui(),
     });
   };
 
@@ -91,6 +98,16 @@ export default function Employees() {
         <input name="nom" placeholder="Nom" value={form.nom} onChange={handleChange} required />
         <input name="prenom" placeholder="Prenom" value={form.prenom} onChange={handleChange} required />
         <input name="poste" placeholder="Poste" value={form.poste} onChange={handleChange} />
+        <label className="champ-date-embauche">
+          Date d'embauche
+          <input
+            name="date_embauche"
+            type="date"
+            value={form.date_embauche}
+            onChange={handleChange}
+            required
+          />
+        </label>
 
         <select name="type_paie" value={form.type_paie} onChange={handleChange}>
           <option value="horaire">Taux horaire</option>
@@ -138,7 +155,7 @@ export default function Employees() {
           name="solde_conges"
           type="number"
           step="0.5"
-          placeholder="Solde conges (jours)"
+          placeholder="Ajustement solde conges (jours)"
           value={form.solde_conges}
           onChange={handleChange}
         />
@@ -159,15 +176,18 @@ export default function Employees() {
 
       {erreur && <p className="erreur">{erreur}</p>}
 
+      <div className="table-scroll">
       <table>
         <thead>
           <tr>
             <th>Nom</th>
             <th>Prenom</th>
             <th>Poste</th>
+            <th>Anciennete</th>
             <th>Mode de paie</th>
             <th>Taux horaire</th>
             <th>Solde conges</th>
+            <th>Solde maladie</th>
             <th>Statut</th>
             <th></th>
           </tr>
@@ -178,13 +198,15 @@ export default function Employees() {
               <td>{emp.nom}</td>
               <td>{emp.prenom}</td>
               <td>{emp.poste}</td>
+              <td>{emp.date_embauche || '-'}</td>
               <td>
                 {emp.type_paie === 'mensuel'
                   ? `Mensuel fixe (${formatMontant(emp.salaire_mensuel)}, ${emp.heures_semaine}h/sem)`
                   : 'Horaire'}
               </td>
               <td>{formatMontant(emp.taux_horaire)}/h</td>
-              <td>{emp.solde_conges} j</td>
+              <td>{emp.solde_conges_disponible} j</td>
+              <td>{emp.solde_maladie_disponible} j</td>
               <td>{emp.actif ? 'Actif' : 'Inactif'}</td>
               <td className="actions">
                 <button onClick={() => handleEdit(emp)}>Modifier</button>
@@ -196,13 +218,14 @@ export default function Employees() {
           ))}
           {employees.length === 0 && (
             <tr>
-              <td colSpan={8} className="vide">
+              <td colSpan={10} className="vide">
                 Aucun employe pour le moment
               </td>
             </tr>
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

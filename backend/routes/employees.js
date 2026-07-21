@@ -1,9 +1,19 @@
 const express = require('express');
 const db = require('../db');
+const { soldeCongesPayes, soldeMaladie } = require('../soldes');
 
 const router = express.Router();
 
 const SEMAINES_PAR_MOIS = 52 / 12;
+
+function ajouterSoldesCalcules(employee) {
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  return {
+    ...employee,
+    solde_conges_disponible: Math.round(soldeCongesPayes(employee, aujourdhui) * 100) / 100,
+    solde_maladie_disponible: Math.round(soldeMaladie(employee, aujourdhui) * 100) / 100,
+  };
+}
 
 function resoudreRemuneration(body, existant) {
   const type_paie = body.type_paie !== undefined ? body.type_paie : existant?.type_paie || 'horaire';
@@ -35,17 +45,17 @@ function resoudreRemuneration(body, existant) {
 
 router.get('/', (req, res) => {
   const rows = db.prepare('SELECT * FROM employees ORDER BY nom, prenom').all();
-  res.json(rows);
+  res.json(rows.map(ajouterSoldesCalcules));
 });
 
 router.get('/:id', (req, res) => {
   const row = db.prepare('SELECT * FROM employees WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Employe introuvable' });
-  res.json(row);
+  res.json(ajouterSoldesCalcules(row));
 });
 
 router.post('/', (req, res) => {
-  const { nom, prenom, poste, solde_conges } = req.body;
+  const { nom, prenom, poste, solde_conges, date_embauche } = req.body;
   if (!nom || !prenom) {
     return res.status(400).json({ error: 'Le nom et le prenom sont requis' });
   }
@@ -57,8 +67,8 @@ router.post('/', (req, res) => {
 
   const info = db
     .prepare(
-      `INSERT INTO employees (nom, prenom, poste, type_paie, taux_horaire, salaire_mensuel, heures_semaine, solde_conges)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO employees (nom, prenom, poste, type_paie, taux_horaire, salaire_mensuel, heures_semaine, solde_conges, date_embauche)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       nom,
@@ -68,10 +78,11 @@ router.post('/', (req, res) => {
       remuneration.taux_horaire,
       remuneration.salaire_mensuel,
       remuneration.heures_semaine,
-      Number(solde_conges) || 0
+      Number(solde_conges) || 0,
+      date_embauche || new Date().toISOString().slice(0, 10)
     );
   const created = db.prepare('SELECT * FROM employees WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json(created);
+  res.status(201).json(ajouterSoldesCalcules(created));
 });
 
 router.put('/:id', (req, res) => {
@@ -83,6 +94,7 @@ router.put('/:id', (req, res) => {
   const poste = req.body.poste ?? existing.poste;
   const solde_conges = req.body.solde_conges !== undefined ? Number(req.body.solde_conges) : existing.solde_conges;
   const actif = req.body.actif !== undefined ? (req.body.actif ? 1 : 0) : existing.actif;
+  const date_embauche = req.body.date_embauche ?? existing.date_embauche;
 
   const remuneration = resoudreRemuneration(req.body, existing);
   if (remuneration.erreur) {
@@ -91,7 +103,7 @@ router.put('/:id', (req, res) => {
 
   db.prepare(
     `UPDATE employees SET nom = ?, prenom = ?, poste = ?, type_paie = ?, taux_horaire = ?,
-     salaire_mensuel = ?, heures_semaine = ?, solde_conges = ?, actif = ?
+     salaire_mensuel = ?, heures_semaine = ?, solde_conges = ?, actif = ?, date_embauche = ?
      WHERE id = ?`
   ).run(
     nom,
@@ -103,11 +115,12 @@ router.put('/:id', (req, res) => {
     remuneration.heures_semaine,
     solde_conges,
     actif,
+    date_embauche,
     req.params.id
   );
 
   const updated = db.prepare('SELECT * FROM employees WHERE id = ?').get(req.params.id);
-  res.json(updated);
+  res.json(ajouterSoldesCalcules(updated));
 });
 
 router.delete('/:id', (req, res) => {

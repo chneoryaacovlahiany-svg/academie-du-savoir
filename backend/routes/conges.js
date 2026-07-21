@@ -1,5 +1,7 @@
 const express = require('express');
 const db = require('../db');
+const { montantMaladiePourAbsence } = require('../calculs');
+const { chargerParametres } = require('../soldes');
 
 const router = express.Router();
 
@@ -11,6 +13,19 @@ function nbJoursEntre(debut, fin) {
   const d2 = new Date(fin);
   const diff = (d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24);
   return diff + 1;
+}
+
+function ajouterMontantMaladie(conge) {
+  if (conge.type !== 'maladie') return conge;
+  const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(conge.employee_id);
+  if (!employee) return conge;
+  const params = chargerParametres();
+  const montant_estime = montantMaladiePourAbsence(
+    conge.nb_jours,
+    employee.taux_horaire,
+    params.heures_standard_jour
+  );
+  return { ...conge, montant_estime: Math.round(montant_estime * 100) / 100 };
 }
 
 router.get('/', (req, res) => {
@@ -26,7 +41,8 @@ router.get('/', (req, res) => {
     params.push(statut);
   }
   query += ' ORDER BY date_debut DESC';
-  res.json(db.prepare(query).all(...params));
+  const rows = db.prepare(query).all(...params);
+  res.json(rows.map(ajouterMontantMaladie));
 });
 
 router.post('/', (req, res) => {
@@ -50,7 +66,8 @@ router.post('/', (req, res) => {
     )
     .run(employee_id, date_debut, date_fin, congeType, nb_jours, commentaire || '');
 
-  res.status(201).json(db.prepare('SELECT * FROM conges WHERE id = ?').get(info.lastInsertRowid));
+  const conge = db.prepare('SELECT * FROM conges WHERE id = ?').get(info.lastInsertRowid);
+  res.status(201).json(ajouterMontantMaladie(conge));
 });
 
 router.put('/:id/statut', (req, res) => {
@@ -61,39 +78,15 @@ router.put('/:id/statut', (req, res) => {
   const conge = db.prepare('SELECT * FROM conges WHERE id = ?').get(req.params.id);
   if (!conge) return res.status(404).json({ error: 'Conge introuvable' });
 
-  const statutPrecedent = conge.statut;
-
   db.prepare('UPDATE conges SET statut = ? WHERE id = ?').run(statut, req.params.id);
 
-  if (conge.type === 'conge_paye') {
-    if (statut === 'approuve' && statutPrecedent !== 'approuve') {
-      db.prepare('UPDATE employees SET solde_conges = solde_conges - ? WHERE id = ?').run(
-        conge.nb_jours,
-        conge.employee_id
-      );
-    } else if (statutPrecedent === 'approuve' && statut !== 'approuve') {
-      db.prepare('UPDATE employees SET solde_conges = solde_conges + ? WHERE id = ?').run(
-        conge.nb_jours,
-        conge.employee_id
-      );
-    }
-  }
-
-  res.json(db.prepare('SELECT * FROM conges WHERE id = ?').get(req.params.id));
+  const updated = db.prepare('SELECT * FROM conges WHERE id = ?').get(req.params.id);
+  res.json(ajouterMontantMaladie(updated));
 });
 
 router.delete('/:id', (req, res) => {
-  const conge = db.prepare('SELECT * FROM conges WHERE id = ?').get(req.params.id);
-  if (!conge) return res.status(404).json({ error: 'Conge introuvable' });
-
-  if (conge.type === 'conge_paye' && conge.statut === 'approuve') {
-    db.prepare('UPDATE employees SET solde_conges = solde_conges + ? WHERE id = ?').run(
-      conge.nb_jours,
-      conge.employee_id
-    );
-  }
-
-  db.prepare('DELETE FROM conges WHERE id = ?').run(req.params.id);
+  const info = db.prepare('DELETE FROM conges WHERE id = ?').run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'Conge introuvable' });
   res.status(204).end();
 });
 

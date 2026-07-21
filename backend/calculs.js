@@ -1,0 +1,96 @@
+const JOUR_MS = 1000 * 60 * 60 * 24;
+const ANNEE_MS = JOUR_MS * 365.25;
+
+function ancienneteAnnees(dateEmbauche, dateRef) {
+  if (!dateEmbauche) return 0;
+  const diff = new Date(dateRef).getTime() - new Date(dateEmbauche).getTime();
+  return Math.max(0, diff / ANNEE_MS);
+}
+
+function joursAnnuelsAcquis(ancienneteAnneesAtteinte, bareme) {
+  let applicable = 0;
+  for (const ligne of bareme) {
+    if (ancienneteAnneesAtteinte + 1e-9 >= ligne.anciennete_annees) {
+      applicable = ligne.jours_par_an;
+    }
+  }
+  return applicable;
+}
+
+// Somme, annee par annee (bareme applique au debut de chaque annee), plus prorata de l'annee en cours.
+function joursCongesAcquisCumules(dateEmbauche, dateRef, bareme) {
+  if (!dateEmbauche) return 0;
+  const debut = new Date(dateEmbauche).getTime();
+  const fin = new Date(dateRef).getTime();
+  if (fin <= debut) return 0;
+
+  const anneesEcoulees = (fin - debut) / ANNEE_MS;
+  const anneesCompletes = Math.floor(anneesEcoulees);
+  const fraction = anneesEcoulees - anneesCompletes;
+
+  let total = 0;
+  for (let an = 0; an < anneesCompletes; an++) {
+    total += joursAnnuelsAcquis(an, bareme);
+  }
+  total += joursAnnuelsAcquis(anneesCompletes, bareme) * fraction;
+  return total;
+}
+
+function joursMaladieAcquis(dateEmbauche, dateRef, tauxParMois, plafond) {
+  if (!dateEmbauche) return 0;
+  const diff = new Date(dateRef).getTime() - new Date(dateEmbauche).getTime();
+  const moisEcoules = Math.max(0, diff / (JOUR_MS * 30.44));
+  return Math.min(moisEcoules * tauxParMois, plafond);
+}
+
+// Palier legal indicatif: 1er jour non paye, 2e-3e jour a 50%, 4e jour et plus a 100%.
+// A verifier avec un professionnel avant utilisation reelle.
+function montantMaladiePourAbsence(nbJours, tauxHoraire, heuresStandardJour) {
+  const tauxJournalier = tauxHoraire * heuresStandardJour;
+  const joursEntiers = Math.floor(nbJours);
+  const fractionDernierJour = nbJours - joursEntiers;
+  let montant = 0;
+
+  for (let jour = 1; jour <= joursEntiers; jour++) {
+    montant += tauxJournalier * palierMaladie(jour);
+  }
+  if (fractionDernierJour > 0) {
+    montant += tauxJournalier * palierMaladie(joursEntiers + 1) * fractionDernierJour;
+  }
+  return montant;
+}
+
+function palierMaladie(jour) {
+  if (jour <= 1) return 0;
+  if (jour <= 3) return 0.5;
+  return 1;
+}
+
+// Heures supplementaires: ne retourne QUE le supplement (au-dela du taux normal deja compte ailleurs).
+function supplementHeuresSup(heuresTravaillees, params, tauxHoraire) {
+  const heuresSup = Math.max(0, heuresTravaillees - params.heures_standard_jour);
+  if (heuresSup <= 0) {
+    return { heuresSup125: 0, heuresSup150: 0, montant: 0 };
+  }
+  const heuresSup125 = Math.min(heuresSup, params.seuil_heures_sup_125);
+  const heuresSup150 = Math.max(0, heuresSup - params.seuil_heures_sup_125);
+  const montant =
+    heuresSup125 * tauxHoraire * (params.majoration_heures_sup_125 - 1) +
+    heuresSup150 * tauxHoraire * (params.majoration_heures_sup_150 - 1);
+  return { heuresSup125, heuresSup150, montant };
+}
+
+function estJourOuvre(dateStr) {
+  const jour = new Date(dateStr).getUTCDay();
+  return jour >= 1 && jour <= 5;
+}
+
+module.exports = {
+  ancienneteAnnees,
+  joursAnnuelsAcquis,
+  joursCongesAcquisCumules,
+  joursMaladieAcquis,
+  montantMaladiePourAbsence,
+  supplementHeuresSup,
+  estJourOuvre,
+};

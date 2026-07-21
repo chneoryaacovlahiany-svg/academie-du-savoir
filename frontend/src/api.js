@@ -53,4 +53,17 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return request(`/rapport${qs ? `?${qs}` : ''}`);
   },
+
+  // Parametres
+  getParametres: () => request('/parametres'),
+  updateParametres: (data) => request('/parametres', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Bareme des conges par anciennete
+  getBareme: () => request('/bareme'),
+  updateBareme: (lignes) => request('/bareme', { method: 'PUT', body: JSON.stringify({ lignes }) }),
+
+  // Jours feries
+  getFeries: (annee) => request(`/feries${annee ? `?annee=${annee}` : ''}`),
+  createFerie: (data) => request('/feries', { method: 'POST', body: JSON.stringify(data) }),
+  deleteFerie: (id) => request(`/feries/${id}`, { method: 'DELETE' }),
 };

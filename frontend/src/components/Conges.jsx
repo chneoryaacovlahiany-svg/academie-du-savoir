@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useDevise } from '../DeviseContext.jsx';
 
 const TYPES = [
   { value: 'conge_paye', label: 'Conge paye' },
@@ -17,6 +18,7 @@ const STATUT_LABELS = {
 const CONGE_VIDE = { employee_id: '', date_debut: '', date_fin: '', type: 'conge_paye', commentaire: '' };
 
 export default function Conges() {
+  const { formatMontant } = useDevise();
   const [employees, setEmployees] = useState([]);
   const [conges, setConges] = useState([]);
   const [form, setForm] = useState(CONGE_VIDE);
@@ -76,7 +78,7 @@ export default function Conges() {
           <option value="">Employe...</option>
           {employees.map((e) => (
             <option key={e.id} value={e.id}>
-              {e.prenom} {e.nom} (solde: {e.solde_conges}j)
+              {e.prenom} {e.nom} (conges: {e.solde_conges_disponible}j, maladie: {e.solde_maladie_disponible}j)
             </option>
           ))}
         </select>
@@ -103,6 +105,7 @@ export default function Conges() {
             <th>Fin</th>
             <th>Jours</th>
             <th>Type</th>
+            <th>Montant estime</th>
             <th>Statut</th>
             <th></th>
           </tr>
@@ -115,6 +118,7 @@ export default function Conges() {
               <td>{c.date_fin}</td>
               <td>{c.nb_jours}</td>
               <td>{TYPES.find((t) => t.value === c.type)?.label || c.type}</td>
+              <td>{c.type === 'maladie' ? formatMontant(c.montant_estime) : '-'}</td>
               <td>
                 <span className={`badge badge-${c.statut}`}>{STATUT_LABELS[c.statut]}</span>
               </td>
@@ -135,7 +139,7 @@ export default function Conges() {
           ))}
           {conges.length === 0 && (
             <tr>
-              <td colSpan={7} className="vide">
+              <td colSpan={8} className="vide">
                 Aucune demande de conge
               </td>
             </tr>

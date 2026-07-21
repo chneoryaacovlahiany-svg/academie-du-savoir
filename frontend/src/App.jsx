@@ -3,6 +3,7 @@ import Employees from './components/Employees.jsx';
 import Pointage from './components/Pointage.jsx';
 import Conges from './components/Conges.jsx';
 import Rapport from './components/Rapport.jsx';
+import Parametres from './components/Parametres.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 
 const ONGLETS = [
@@ -10,6 +11,7 @@ const ONGLETS = [
   { id: 'employes', label: 'Employes' },
   { id: 'conges', label: 'Conges' },
   { id: 'rapport', label: 'Rapport & Paie' },
+  { id: 'parametres', label: 'Parametres' },
 ];
 
 export default function App() {
@@ -52,6 +54,7 @@ export default function App() {
         {onglet === 'employes' && <Employees />}
         {onglet === 'conges' && <Conges />}
         {onglet === 'rapport' && <Rapport />}
+        {onglet === 'parametres' && <Parametres />}
       </main>
     </div>
   );

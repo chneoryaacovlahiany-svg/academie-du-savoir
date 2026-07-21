@@ -1,5 +1,7 @@
 const express = require('express');
 const db = require('../db');
+const { supplementHeuresSup, montantMaladiePourAbsence, estJourOuvre } = require('../calculs');
+const { chargerParametres, soldeCongesPayes, soldeMaladie } = require('../soldes');
 
 const router = express.Router();
 
@@ -23,6 +25,8 @@ router.get('/', (req, res) => {
     return res.status(400).json({ error: 'Fournir soit "mois" (YYYY-MM) soit "debut" et "fin" (YYYY-MM-DD)' });
   }
 
+  const params = chargerParametres();
+
   let employees = [];
   if (employee_id) {
     const emp = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
@@ -31,6 +35,10 @@ router.get('/', (req, res) => {
   } else {
     employees = db.prepare('SELECT * FROM employees ORDER BY nom, prenom').all();
   }
+
+  const joursFeriesPeriode = db
+    .prepare('SELECT * FROM jours_feries WHERE date >= ? AND date <= ? ORDER BY date')
+    .all(debut, fin);
 
   const rapport = employees.map((emp) => {
     const pointages = db
@@ -54,14 +62,32 @@ router.get('/', (req, res) => {
       .filter((c) => c.type === 'conge_paye')
       .reduce((acc, c) => acc + c.nb_jours, 0);
 
-    const heuresJourStandard = 8;
     const estMensuel = emp.type_paie === 'mensuel' && emp.salaire_mensuel;
 
     // Salaire fixe: les conges payes sont deja inclus dans le salaire mensuel.
     // Taux horaire: seules les heures pointees sont payees, les conges payes s'ajoutent en plus.
     const montantTravail = estMensuel ? emp.salaire_mensuel : totalHeures * emp.taux_horaire;
-    const montantConges = estMensuel ? 0 : joursCongesPayes * heuresJourStandard * emp.taux_horaire;
-    const montantTotal = montantTravail + montantConges;
+    const montantConges = estMensuel ? 0 : joursCongesPayes * params.heures_standard_jour * emp.taux_horaire;
+
+    // Maladie: 1er jour non paye, 2e-3e a 50%, 4e et plus a 100% (bareme indicatif, cf. Parametres).
+    const montantMaladie = conges
+      .filter((c) => c.type === 'maladie')
+      .reduce((acc, c) => acc + montantMaladiePourAbsence(c.nb_jours, emp.taux_horaire, params.heures_standard_jour), 0);
+
+    // Heures supplementaires: supplement uniquement (les heures elles-memes sont deja dans montant_travail).
+    const montantHeuresSup = pointages.reduce((acc, p) => {
+      if (!p.heures_travaillees) return acc;
+      return acc + supplementHeuresSup(p.heures_travaillees, params, emp.taux_horaire).montant;
+    }, 0);
+
+    // Jours feries payes non travailles (hors salaire mensuel, deja inclus dedans).
+    const dateSPointees = new Set(pointages.map((p) => p.date));
+    const joursFeriesPayes = estMensuel
+      ? 0
+      : joursFeriesPeriode.filter((jf) => estJourOuvre(jf.date) && !dateSPointees.has(jf.date)).length;
+    const montantJoursFeries = joursFeriesPayes * params.heures_standard_jour * emp.taux_horaire;
+
+    const montantTotal = montantTravail + montantConges + montantMaladie + montantHeuresSup + montantJoursFeries;
 
     return {
       employee_id: emp.id,
@@ -76,9 +102,14 @@ router.get('/', (req, res) => {
       jours_travailles: joursTravailles,
       jours_conges: joursConges,
       jours_conges_payes: joursCongesPayes,
-      solde_conges: emp.solde_conges,
+      jours_feries_payes: joursFeriesPayes,
+      solde_conges_disponible: Math.round(soldeCongesPayes(emp, fin) * 100) / 100,
+      solde_maladie_disponible: Math.round(soldeMaladie(emp, fin) * 100) / 100,
       montant_travail: Math.round(montantTravail * 100) / 100,
       montant_conges: Math.round(montantConges * 100) / 100,
+      montant_maladie: Math.round(montantMaladie * 100) / 100,
+      montant_heures_sup: Math.round(montantHeuresSup * 100) / 100,
+      montant_jours_feries: Math.round(montantJoursFeries * 100) / 100,
       montant_total: Math.round(montantTotal * 100) / 100,
       pointages,
       conges,

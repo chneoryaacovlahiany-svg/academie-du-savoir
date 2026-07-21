@@ -22,6 +22,7 @@ db.exec(`
     salaire_mensuel REAL,
     heures_semaine REAL,
     solde_conges REAL NOT NULL DEFAULT 0,
+    date_embauche TEXT,
     actif INTEGER NOT NULL DEFAULT 1,
     date_creation TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -46,6 +47,22 @@ db.exec(`
     nb_jours REAL NOT NULL,
     commentaire TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS parametres (
+    cle TEXT PRIMARY KEY,
+    valeur TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS bareme_conges (
+    anciennete_annees INTEGER PRIMARY KEY,
+    jours_par_an REAL NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS jours_feries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT NOT NULL UNIQUE,
+    nom TEXT NOT NULL
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);
@@ -57,6 +74,44 @@ if (!colonnesEmployees.includes('salaire_mensuel')) {
 }
 if (!colonnesEmployees.includes('heures_semaine')) {
   db.exec('ALTER TABLE employees ADD COLUMN heures_semaine REAL');
+}
+if (!colonnesEmployees.includes('date_embauche')) {
+  db.exec('ALTER TABLE employees ADD COLUMN date_embauche TEXT');
+}
+
+// Parametres par defaut (modifiables dans l'onglet Parametres).
+// A verifier avec un comptable / conseiller en paie avant utilisation reelle.
+const parametresDefaut = {
+  semaine_jours: '5',
+  heures_standard_jour: '8',
+  seuil_heures_sup_125: '2',
+  majoration_heures_sup_125: '1.25',
+  majoration_heures_sup_150: '1.5',
+  plafond_conges_maladie: '90',
+  accumulation_maladie_mois: '1.5',
+};
+const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
+for (const [cle, valeur] of Object.entries(parametresDefaut)) {
+  insererParametre.run(cle, valeur);
+}
+
+// Bareme de conges annuels par anciennete (semaine de 5 jours), a titre indicatif.
+// A verifier avec un professionnel: le droit israelien evolue et depend de conventions sectorielles.
+const baremeDefaut = [
+  [0, 12],
+  [5, 14],
+  [7, 15],
+  [9, 17],
+  [10, 18],
+  [11, 19],
+  [12, 20],
+  [13, 21],
+  [14, 22],
+  [15, 23],
+];
+const insererBareme = db.prepare('INSERT OR IGNORE INTO bareme_conges (anciennete_annees, jours_par_an) VALUES (?, ?)');
+for (const [annees, jours] of baremeDefaut) {
+  insererBareme.run(annees, jours);
 }
 
 module.exports = db;

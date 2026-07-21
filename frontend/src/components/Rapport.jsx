@@ -42,61 +42,73 @@ export default function Rapport() {
 
       {erreur && <p className="erreur">{erreur}</p>}
 
-      <table>
-        <thead>
-          <tr>
-            <th>Employe</th>
-            <th>Mode de paie</th>
-            <th>Taux horaire</th>
-            <th>Jours travailles</th>
-            <th>Heures travaillees</th>
-            <th>Jours conges payes</th>
-            <th>Montant travail</th>
-            <th>Montant conges</th>
-            <th>Montant total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rapport.map((r) => (
-            <tr key={r.employee_id}>
-              <td>
-                {r.prenom} {r.nom}
-              </td>
-              <td>{r.type_paie === 'mensuel' ? 'Mensuel fixe' : 'Horaire'}</td>
-              <td>{formatMontant(r.taux_horaire)}/h</td>
-              <td>{r.jours_travailles}</td>
-              <td>{r.total_heures.toFixed(2)} h</td>
-              <td>{r.jours_conges_payes}</td>
-              <td>{formatMontant(r.montant_travail)}</td>
-              <td>{formatMontant(r.montant_conges)}</td>
-              <td className="montant-total">{formatMontant(r.montant_total)}</td>
-            </tr>
-          ))}
-          {rapport.length === 0 && (
+      <div className="table-scroll">
+        <table>
+          <thead>
             <tr>
-              <td colSpan={9} className="vide">
-                Aucune donnee pour ce mois
-              </td>
+              <th>Employe</th>
+              <th>Mode de paie</th>
+              <th>Taux horaire</th>
+              <th>Heures travaillees</th>
+              <th>Conges payes (j)</th>
+              <th>Feries payes (j)</th>
+              <th>Solde conges</th>
+              <th>Solde maladie</th>
+              <th>Montant travail</th>
+              <th>Montant conges</th>
+              <th>Montant maladie</th>
+              <th>Montant heures sup</th>
+              <th>Montant feries</th>
+              <th>Montant total</th>
             </tr>
+          </thead>
+          <tbody>
+            {rapport.map((r) => (
+              <tr key={r.employee_id}>
+                <td>
+                  {r.prenom} {r.nom}
+                </td>
+                <td>{r.type_paie === 'mensuel' ? 'Mensuel fixe' : 'Horaire'}</td>
+                <td>{formatMontant(r.taux_horaire)}/h</td>
+                <td>{r.total_heures.toFixed(2)} h</td>
+                <td>{r.jours_conges_payes}</td>
+                <td>{r.jours_feries_payes}</td>
+                <td>{r.solde_conges_disponible} j</td>
+                <td>{r.solde_maladie_disponible} j</td>
+                <td>{formatMontant(r.montant_travail)}</td>
+                <td>{formatMontant(r.montant_conges)}</td>
+                <td>{formatMontant(r.montant_maladie)}</td>
+                <td>{formatMontant(r.montant_heures_sup)}</td>
+                <td>{formatMontant(r.montant_jours_feries)}</td>
+                <td className="montant-total">{formatMontant(r.montant_total)}</td>
+              </tr>
+            ))}
+            {rapport.length === 0 && (
+              <tr>
+                <td colSpan={14} className="vide">
+                  Aucune donnee pour ce mois
+                </td>
+              </tr>
+            )}
+          </tbody>
+          {rapport.length > 0 && (
+            <tfoot>
+              <tr>
+                <td colSpan={3}>
+                  <strong>Total</strong>
+                </td>
+                <td>
+                  <strong>{totalHeures.toFixed(2)} h</strong>
+                </td>
+                <td colSpan={8}></td>
+                <td className="montant-total">
+                  <strong>{formatMontant(totalGeneral)}</strong>
+                </td>
+              </tr>
+            </tfoot>
           )}
-        </tbody>
-        {rapport.length > 0 && (
-          <tfoot>
-            <tr>
-              <td colSpan={4}>
-                <strong>Total</strong>
-              </td>
-              <td>
-                <strong>{totalHeures.toFixed(2)} h</strong>
-              </td>
-              <td colSpan={3}></td>
-              <td className="montant-total">
-                <strong>{formatMontant(totalGeneral)}</strong>
-              </td>
-            </tr>
-          </tfoot>
-        )}
-      </table>
+        </table>
+      </div>
     </div>
   );
 }
