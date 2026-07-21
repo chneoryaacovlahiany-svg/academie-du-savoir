@@ -14,7 +14,13 @@ router.get('/', (req, res) => {
   const debutAnnee = `${annee}-01-01`;
   const finAnnee = `${annee}-12-31`;
 
-  const employees = db.prepare('SELECT * FROM employees WHERE actif = 1').all();
+  let employees;
+  if (req.query.employee_id) {
+    const emp = db.prepare('SELECT * FROM employees WHERE id = ?').get(req.query.employee_id);
+    employees = emp ? [emp] : [];
+  } else {
+    employees = db.prepare('SELECT * FROM employees WHERE actif = 1').all();
+  }
   const bareme = chargerBareme();
 
   const congesPrisAnnee = db

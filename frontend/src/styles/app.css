@@ -386,3 +386,84 @@ button.sortie:hover {
   background: #fbe3e3;
   color: #d03b3b;
 }
+
+.calendrier {
+  margin-top: 8px;
+}
+
+.calendrier-entetes,
+.calendrier-grille {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendrier-entete {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  padding: 4px 0;
+}
+
+.calendrier-jour {
+  aspect-ratio: 1;
+  min-height: 64px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 6px 8px;
+  gap: 4px;
+  font-family: inherit;
+}
+
+.calendrier-jour:hover {
+  border-color: #93c5fd;
+}
+
+.calendrier-jour-vide {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.calendrier-jour-numero {
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+}
+
+.calendrier-jour-detail {
+  font-size: 11px;
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.calendrier-jour-pointe {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.calendrier-jour-selectionne {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+}
+
+.panneau-edition-jour {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.panneau-edition-jour h4 {
+  margin-top: 0;
+  text-transform: capitalize;
+}

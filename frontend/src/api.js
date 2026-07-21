@@ -38,6 +38,7 @@ export const api = {
   pointerSortie: (employee_id) => request('/pointages/sortie', { method: 'POST', body: JSON.stringify({ employee_id }) }),
   updatePointage: (id, data) => request(`/pointages/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePointage: (id) => request(`/pointages/${id}`, { method: 'DELETE' }),
+  pointageManuel: (data) => request('/pointages/manuel', { method: 'POST', body: JSON.stringify(data) }),
 
   // Conges
   getConges: (params = {}) => {
@@ -68,5 +69,8 @@ export const api = {
   deleteFerie: (id) => request(`/feries/${id}`, { method: 'DELETE' }),
 
   // Tableau de bord
-  getDashboard: (annee) => request(`/dashboard${annee ? `?annee=${annee}` : ''}`),
+  getDashboard: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/dashboard${qs ? `?${qs}` : ''}`);
+  },
 };

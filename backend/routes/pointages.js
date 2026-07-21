@@ -109,6 +109,37 @@ router.post('/sortie', (req, res) => {
   res.json(result);
 });
 
+// Ajout ou correction manuelle par un administrateur (pour un employe/jour donne)
+router.post('/manuel', (req, res) => {
+  const { employee_id, date, heure_entree, heure_sortie } = req.body;
+  if (!employee_id || !date) {
+    return res.status(400).json({ error: 'employee_id et date sont requis' });
+  }
+
+  const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
+  if (!employee) return res.status(404).json({ error: 'Employe introuvable' });
+
+  const heures_travaillees =
+    heure_entree && heure_sortie ? computeHeures(heure_entree, heure_sortie) : null;
+
+  const existing = db
+    .prepare('SELECT * FROM pointages WHERE employee_id = ? AND date = ?')
+    .get(employee_id, date);
+
+  if (existing) {
+    db.prepare(
+      'UPDATE pointages SET heure_entree = ?, heure_sortie = ?, heures_travaillees = ? WHERE id = ?'
+    ).run(heure_entree || null, heure_sortie || null, heures_travaillees, existing.id);
+  } else {
+    db.prepare(
+      'INSERT INTO pointages (employee_id, date, heure_entree, heure_sortie, heures_travaillees) VALUES (?, ?, ?, ?, ?)'
+    ).run(employee_id, date, heure_entree || null, heure_sortie || null, heures_travaillees);
+  }
+
+  const result = db.prepare('SELECT * FROM pointages WHERE employee_id = ? AND date = ?').get(employee_id, date);
+  res.json(result);
+});
+
 // Correction manuelle par un administrateur
 router.put('/:id', (req, res) => {
   const existing = db.prepare('SELECT * FROM pointages WHERE id = ?').get(req.params.id);

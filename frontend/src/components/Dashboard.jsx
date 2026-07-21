@@ -15,21 +15,27 @@ function formatDateFr(dateStr) {
 
 export default function Dashboard() {
   const { formatMontant } = useDevise();
+  const [employees, setEmployees] = useState([]);
+  const [employeeFiltre, setEmployeeFiltre] = useState('');
   const [donnees, setDonnees] = useState(null);
   const [erreur, setErreur] = useState('');
 
-  const charger = async () => {
+  const charger = async (employeeId) => {
     setErreur('');
     try {
-      setDonnees(await api.getDashboard());
+      setDonnees(await api.getDashboard(employeeId ? { employee_id: employeeId } : {}));
     } catch (err) {
       setErreur(err.message);
     }
   };
 
   useEffect(() => {
-    charger();
+    api.getEmployees().then(setEmployees);
   }, []);
+
+  useEffect(() => {
+    charger(employeeFiltre);
+  }, [employeeFiltre]);
 
   if (erreur) return <div className="panel"><p className="erreur">{erreur}</p></div>;
   if (!donnees) return <div className="panel">Chargement...</div>;
@@ -40,6 +46,20 @@ export default function Dashboard() {
     <div className="panel">
       <h2>Tableau de bord</h2>
 
+      <div className="form-inline">
+        <label>
+          Employe:{' '}
+          <select value={employeeFiltre} onChange={(e) => setEmployeeFiltre(e.target.value)}>
+            <option value="">Tous les employes</option>
+            {employees.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.prenom} {e.nom}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       <div className="cadrans">
         <div className="cadran">
           <div className="cadran-valeur">{g.jours_conges_pris_annee}</div>
@@ -47,7 +67,9 @@ export default function Dashboard() {
         </div>
         <div className="cadran">
           <div className="cadran-valeur">{g.jours_conges_restants}</div>
-          <div className="cadran-label">Jours de conge restants (tous employes)</div>
+          <div className="cadran-label">
+            Jours de conge restants {employeeFiltre ? '' : '(tous employes)'}
+          </div>
         </div>
         <div className="cadran">
           <div className="cadran-valeur">{formatMontant(g.masse_salariale_horaire)}</div>
