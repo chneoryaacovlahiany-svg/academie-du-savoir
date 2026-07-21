@@ -277,7 +277,15 @@ export default function Calendrier() {
         <div className="cadrans cadrans-compacts">
           <div className="cadran">
             <div className="cadran-valeur">{resume.total_heures.toFixed(2)} h</div>
-            <div className="cadran-label">Total heures du mois</div>
+            <div className="cadran-label">Total heures du mois realise</div>
+          </div>
+          <div className="cadran">
+            <div className="cadran-valeur">{(resume.heures_a_effectuer ?? 0).toFixed(2)} h</div>
+            <div className="cadran-label">Total heures du mois a effectuer</div>
+          </div>
+          <div className="cadran">
+            <div className="cadran-valeur">{(resume.heures_presence ?? 0).toFixed(2)} h</div>
+            <div className="cadran-label">Total heures de presence du mois</div>
           </div>
           <div className="cadran">
             <div className="cadran-valeur">{resume.heures_manquantes > 0 ? resume.heures_manquantes.toFixed(2) : '0'} h</div>

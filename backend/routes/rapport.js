@@ -7,6 +7,7 @@ const {
   jourSemaineLundi0,
   heuresPrevuesJour,
   heuresEffectivesJour,
+  datesEntre,
 } = require('../calculs');
 const { chargerParametres, soldeCongesPayes, soldeMaladie } = require('../soldes');
 
@@ -85,6 +86,21 @@ router.get('/', (req, res) => {
     const totalHeures = Object.values(heuresEffectivesParDate).reduce((acc, h) => acc + h, 0);
     const joursTravailles = pointages.filter((p) => p.heures_travaillees != null).length;
 
+    // Heures prevues sur tout le mois (plage horaire, pause deduite), independamment
+    // des pointages: c'est le volume d'heures que l'employe est cense faire.
+    let heuresAEffectuer = 0;
+    if (horaires.length > 0) {
+      for (const date of datesEntre(debut, fin)) {
+        const horaireJour = horaireParJour[jourSemaineLundi0(date)];
+        if (!horaireJour || !horaireJour.actif) continue;
+        heuresAEffectuer += heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes);
+      }
+    }
+
+    // Presence brute: duree reelle entre entree et sortie, sans pause ni plafond
+    // (peu importe le droit aux heures sup) - le temps physiquement pointe.
+    const heuresPresence = pointages.reduce((acc, p) => acc + (p.heures_travaillees || 0), 0);
+
     // Ecart entre heures prevues (plage horaire, pause deduite) et heures
     // reellement payees, jour par jour. Ne concerne que les jours ou l'employe
     // a pointe (une absence totale sans pointage n'est pas comptee ici: c'est
@@ -158,6 +174,8 @@ router.get('/', (req, res) => {
       heures_semaine: emp.heures_semaine,
       periode: { debut, fin },
       total_heures: Math.round(totalHeures * 100) / 100,
+      heures_a_effectuer: Math.round(heuresAEffectuer * 100) / 100,
+      heures_presence: Math.round(heuresPresence * 100) / 100,
       jours_travailles: joursTravailles,
       jours_conges: joursConges,
       jours_conges_payes: joursCongesPayes,
