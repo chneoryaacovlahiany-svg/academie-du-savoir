@@ -10,6 +10,7 @@ const rapportRouter = require('./routes/rapport');
 const parametresRouter = require('./routes/parametres');
 const baremeRouter = require('./routes/bareme');
 const feriesRouter = require('./routes/feries');
+const dashboardRouter = require('./routes/dashboard');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -26,6 +27,7 @@ app.use('/api/rapport', rapportRouter);
 app.use('/api/parametres', parametresRouter);
 app.use('/api/bareme', baremeRouter);
 app.use('/api/feries', feriesRouter);
+app.use('/api/dashboard', dashboardRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Dashboard from './components/Dashboard.jsx';
 import Employees from './components/Employees.jsx';
 import Pointage from './components/Pointage.jsx';
 import Conges from './components/Conges.jsx';
@@ -7,6 +8,7 @@ import Parametres from './components/Parametres.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 
 const ONGLETS = [
+  { id: 'dashboard', label: 'Tableau de bord' },
   { id: 'pointage', label: 'Pointage' },
   { id: 'employes', label: 'Employes' },
   { id: 'conges', label: 'Conges' },
@@ -15,7 +17,7 @@ const ONGLETS = [
 ];
 
 export default function App() {
-  const [onglet, setOnglet] = useState('pointage');
+  const [onglet, setOnglet] = useState('dashboard');
   const { devise, changerDevise } = useDevise();
 
   return (
@@ -50,6 +52,7 @@ export default function App() {
       </nav>
 
       <main className="content">
+        {onglet === 'dashboard' && <Dashboard />}
         {onglet === 'pointage' && <Pointage />}
         {onglet === 'employes' && <Employees />}
         {onglet === 'conges' && <Conges />}

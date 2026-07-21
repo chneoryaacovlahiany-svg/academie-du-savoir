@@ -66,4 +66,7 @@ export const api = {
   getFeries: (annee) => request(`/feries${annee ? `?annee=${annee}` : ''}`),
   createFerie: (data) => request('/feries', { method: 'POST', body: JSON.stringify(data) }),
   deleteFerie: (id) => request(`/feries/${id}`, { method: 'DELETE' }),
+
+  // Tableau de bord
+  getDashboard: (annee) => request(`/dashboard${annee ? `?annee=${annee}` : ''}`),
 };
