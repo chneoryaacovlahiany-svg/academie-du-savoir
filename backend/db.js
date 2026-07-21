@@ -23,6 +23,8 @@ db.exec(`
     heures_semaine REAL,
     solde_conges REAL NOT NULL DEFAULT 0,
     date_embauche TEXT,
+    pause_minutes INTEGER NOT NULL DEFAULT 0,
+    droit_heures_sup INTEGER NOT NULL DEFAULT 1,
     actif INTEGER NOT NULL DEFAULT 1,
     date_creation TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -87,6 +89,12 @@ if (!colonnesEmployees.includes('heures_semaine')) {
 }
 if (!colonnesEmployees.includes('date_embauche')) {
   db.exec('ALTER TABLE employees ADD COLUMN date_embauche TEXT');
+}
+if (!colonnesEmployees.includes('pause_minutes')) {
+  db.exec('ALTER TABLE employees ADD COLUMN pause_minutes INTEGER NOT NULL DEFAULT 0');
+}
+if (!colonnesEmployees.includes('droit_heures_sup')) {
+  db.exec('ALTER TABLE employees ADD COLUMN droit_heures_sup INTEGER NOT NULL DEFAULT 1');
 }
 
 // Parametres par defaut (modifiables dans l'onglet Parametres).

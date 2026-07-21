@@ -113,12 +113,36 @@ function jourSemaineLundi0(dateStr) {
   return (new Date(`${dateStr}T00:00:00`).getDay() + 6) % 7;
 }
 
-// Duree prevue (en heures) entre deux horaires "HH:MM".
-function heuresPrevuesJour(heureDebut, heureFin) {
+// Duree prevue (en heures) entre deux horaires "HH:MM", pause quotidienne deduite.
+function heuresPrevuesJour(heureDebut, heureFin, pauseMinutes = 0) {
   if (!heureDebut || !heureFin) return 0;
   const [h1, m1] = heureDebut.split(':').map(Number);
   const [h2, m2] = heureFin.split(':').map(Number);
-  return Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+  const brut = Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
+  return Math.max(0, brut - pauseMinutes / 60);
+}
+
+// Heures effectivement payees pour un pointage:
+// - la pause quotidienne est toujours deduite;
+// - si l'employe n'a PAS droit aux heures supplementaires et qu'une plage
+//   horaire est definie ce jour-la, la sortie est plafonnee a l'heure de fin
+//   prevue (le temps travaille au-dela n'est pas paye du tout, ni en heures
+//   normales ni en heures sup).
+function heuresEffectivesJour(pointage, horaireJour, droitHeuresSup, pauseMinutes = 0) {
+  if (!pointage || pointage.heures_travaillees == null) return 0;
+
+  let heuresBrutes = pointage.heures_travaillees;
+
+  if (!droitHeuresSup && horaireJour && horaireJour.actif && horaireJour.heure_fin && pointage.heure_sortie) {
+    const sortiePrevue = new Date(`${pointage.date}T${horaireJour.heure_fin}:00`);
+    const sortieReelle = new Date(pointage.heure_sortie);
+    if (sortieReelle > sortiePrevue) {
+      const entreeReelle = new Date(pointage.heure_entree);
+      heuresBrutes = Math.max(0, (sortiePrevue.getTime() - entreeReelle.getTime()) / (1000 * 60 * 60));
+    }
+  }
+
+  return Math.max(0, heuresBrutes - pauseMinutes / 60);
 }
 
 module.exports = {
@@ -133,4 +157,5 @@ module.exports = {
   datesEntre,
   jourSemaineLundi0,
   heuresPrevuesJour,
+  heuresEffectivesJour,
 };

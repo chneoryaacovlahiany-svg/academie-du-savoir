@@ -22,6 +22,8 @@ const EMPLOYE_VIDE = {
   heures_semaine: '35',
   solde_conges: '0',
   date_embauche: aujourdhui(),
+  pause_minutes: '0',
+  droit_heures_sup: 'oui',
 };
 
 function tauxHoraireCalcule(form) {
@@ -60,6 +62,8 @@ export default function Employees() {
         type_paie: form.type_paie,
         solde_conges: Number(form.solde_conges),
         date_embauche: form.date_embauche,
+        pause_minutes: Number(form.pause_minutes) || 0,
+        droit_heures_sup: form.droit_heures_sup === 'oui',
         ...(form.type_paie === 'mensuel'
           ? { salaire_mensuel: Number(form.salaire_mensuel), heures_semaine: Number(form.heures_semaine) }
           : { taux_horaire: Number(form.taux_horaire) }),
@@ -89,6 +93,8 @@ export default function Employees() {
       heures_semaine: emp.heures_semaine != null ? String(emp.heures_semaine) : '35',
       solde_conges: String(emp.solde_conges),
       date_embauche: emp.date_embauche || aujourdhui(),
+      pause_minutes: String(emp.pause_minutes ?? 0),
+      droit_heures_sup: emp.droit_heures_sup ? 'oui' : 'non',
     });
   };
 
@@ -207,6 +213,24 @@ export default function Employees() {
           value={form.solde_conges}
           onChange={handleChange}
         />
+        <label className="champ-date-embauche">
+          Pause (minutes)
+          <input
+            name="pause_minutes"
+            type="number"
+            step="5"
+            min="0"
+            value={form.pause_minutes}
+            onChange={handleChange}
+          />
+        </label>
+        <label className="champ-date-embauche">
+          Heures supplementaires
+          <select name="droit_heures_sup" value={form.droit_heures_sup} onChange={handleChange}>
+            <option value="oui">Autorisees</option>
+            <option value="non">Non autorisees</option>
+          </select>
+        </label>
         <button type="submit">{editingId ? 'Modifier' : 'Ajouter'}</button>
         {editingId && (
           <button
@@ -236,6 +260,8 @@ export default function Employees() {
             <th>Taux horaire</th>
             <th>Solde conges</th>
             <th>Solde maladie</th>
+            <th>Pause</th>
+            <th>Heures sup</th>
             <th>Statut</th>
             <th></th>
           </tr>
@@ -255,6 +281,8 @@ export default function Employees() {
               <td>{formatMontant(emp.taux_horaire)}/h</td>
               <td>{emp.solde_conges_disponible} j</td>
               <td>{emp.solde_maladie_disponible} j</td>
+              <td>{emp.pause_minutes || 0} min</td>
+              <td>{emp.droit_heures_sup ? 'Autorisees' : 'Non autorisees'}</td>
               <td>{emp.actif ? 'Actif' : 'Inactif'}</td>
               <td className="actions">
                 <button onClick={() => handleEdit(emp)}>Modifier</button>
@@ -269,7 +297,7 @@ export default function Employees() {
           ))}
           {employees.length === 0 && (
             <tr>
-              <td colSpan={10} className="vide">
+              <td colSpan={12} className="vide">
                 Aucun employe pour le moment
               </td>
             </tr>
@@ -287,9 +315,10 @@ export default function Employees() {
             })()}
           </h4>
           <p className="aide">
-            Pour les employes au salaire mensuel fixe, un ecart entre ces heures et les heures
-            reellement pointees (retard, depart anticipe, absence non justifiee) sera deduit du
-            salaire dans le Rapport & Paie.
+            La pause quotidienne et le droit aux heures supplementaires se reglent dans le
+            formulaire de l'employe ci-dessus. Pour les employes au salaire mensuel fixe, un ecart
+            entre ces heures et les heures reellement payees (retard, depart anticipe) sera deduit
+            du salaire dans le Rapport & Paie.
           </p>
           {messageHoraire && <p className="confirmation">{messageHoraire}</p>}
           <table>

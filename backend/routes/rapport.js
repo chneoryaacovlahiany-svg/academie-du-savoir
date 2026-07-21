@@ -6,6 +6,7 @@ const {
   estJourOuvre,
   jourSemaineLundi0,
   heuresPrevuesJour,
+  heuresEffectivesJour,
 } = require('../calculs');
 const { chargerParametres, soldeCongesPayes, soldeMaladie } = require('../soldes');
 
@@ -54,9 +55,6 @@ router.get('/', (req, res) => {
       )
       .all(emp.id, debut, fin);
 
-    const totalHeures = pointages.reduce((acc, p) => acc + (p.heures_travaillees || 0), 0);
-    const joursTravailles = pointages.filter((p) => p.heures_travaillees != null).length;
-
     const conges = db
       .prepare(
         `SELECT * FROM conges WHERE employee_id = ? AND statut = 'approuve'
@@ -70,19 +68,31 @@ router.get('/', (req, res) => {
       .reduce((acc, c) => acc + c.nb_jours, 0);
 
     const estMensuel = emp.type_paie === 'mensuel' && emp.salaire_mensuel;
+    const droitHeuresSup = !!emp.droit_heures_sup;
+    const pauseMinutes = emp.pause_minutes || 0;
+
+    const horaires = db.prepare('SELECT * FROM horaires_travail WHERE employee_id = ?').all(emp.id);
+    const horaireParJour = Object.fromEntries(horaires.map((h) => [h.jour_semaine, h]));
+
+    // Heures effectivement payees par pointage: pause quotidienne deduite, et
+    // sortie plafonnee a l'heure de fin prevue si l'employe n'a pas droit aux
+    // heures supplementaires (le depassement n'est alors pas paye du tout).
+    const heuresEffectivesParDate = {};
+    for (const p of pointages) {
+      const horaireJour = horaireParJour[jourSemaineLundi0(p.date)];
+      heuresEffectivesParDate[p.date] = heuresEffectivesJour(p, horaireJour, droitHeuresSup, pauseMinutes);
+    }
+    const totalHeures = Object.values(heuresEffectivesParDate).reduce((acc, h) => acc + h, 0);
+    const joursTravailles = pointages.filter((p) => p.heures_travaillees != null).length;
 
     // Salaire fixe: si une plage horaire est definie pour l'employe, un ecart entre
-    // les heures prevues et les heures reellement pointees (retard, depart anticipe)
+    // les heures prevues et les heures reellement payees (retard, depart anticipe)
     // est deduit du salaire. Ne s'applique qu'aux jours ou l'employe a pointe
     // (une absence totale sans pointage n'est PAS deduite ici: c'est un cas separe,
     // a gerer via une demande de conge/absence si necessaire).
     let montantDeduction = 0;
     let heuresManquantes = 0;
-    const horaires = estMensuel
-      ? db.prepare('SELECT * FROM horaires_travail WHERE employee_id = ?').all(emp.id)
-      : [];
     if (estMensuel && horaires.length > 0) {
-      const horaireParJour = Object.fromEntries(horaires.map((h) => [h.jour_semaine, h]));
       for (const p of pointages) {
         if (p.heures_travaillees == null) continue;
         const horaireJour = horaireParJour[jourSemaineLundi0(p.date)];
@@ -90,16 +100,16 @@ router.get('/', (req, res) => {
         if (joursFeriesDates.has(p.date)) continue;
         if (conges.some((c) => c.date_debut <= p.date && c.date_fin >= p.date)) continue;
 
-        const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin);
+        const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes);
         if (heuresPrevues <= 0) continue;
-        const ecart = Math.max(0, heuresPrevues - p.heures_travaillees);
+        const ecart = Math.max(0, heuresPrevues - heuresEffectivesParDate[p.date]);
         heuresManquantes += ecart;
         montantDeduction += ecart * emp.taux_horaire;
       }
     }
 
     // Salaire fixe: les conges payes sont deja inclus dans le salaire mensuel.
-    // Taux horaire: seules les heures pointees sont payees, les conges payes s'ajoutent en plus.
+    // Taux horaire: seules les heures payees sont comptees, les conges payes s'ajoutent en plus.
     const montantTravail = estMensuel
       ? Math.max(0, emp.salaire_mensuel - montantDeduction)
       : totalHeures * emp.taux_horaire;
@@ -110,11 +120,14 @@ router.get('/', (req, res) => {
       .filter((c) => c.type === 'maladie')
       .reduce((acc, c) => acc + montantMaladiePourAbsence(c.nb_jours, emp.taux_horaire, params.heures_standard_jour), 0);
 
-    // Heures supplementaires: supplement uniquement (les heures elles-memes sont deja dans montant_travail).
-    const montantHeuresSup = pointages.reduce((acc, p) => {
-      if (!p.heures_travaillees) return acc;
-      return acc + supplementHeuresSup(p.heures_travaillees, params, emp.taux_horaire).montant;
-    }, 0);
+    // Heures supplementaires: supplement uniquement (les heures elles-memes sont deja
+    // dans montant_travail). Aucun supplement si l'employe n'a pas droit aux heures sup.
+    const montantHeuresSup = droitHeuresSup
+      ? Object.values(heuresEffectivesParDate).reduce(
+          (acc, h) => acc + supplementHeuresSup(h, params, emp.taux_horaire).montant,
+          0
+        )
+      : 0;
 
     // Jours feries payes non travailles (hors salaire mensuel, deja inclus dedans).
     const dateSPointees = new Set(pointages.map((p) => p.date));
