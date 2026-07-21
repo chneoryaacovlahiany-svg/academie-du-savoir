@@ -62,6 +62,13 @@ export default function Calendrier() {
   const [plage, setPlage] = useState({ date_debut: '', date_fin: '', heure_entree: '', heure_sortie: '' });
   const [messagePlage, setMessagePlage] = useState('');
 
+  const [resume, setResume] = useState(null);
+
+  const [joursSelectionnes, setJoursSelectionnes] = useState([]);
+  const [formMultipleEntree, setFormMultipleEntree] = useState('');
+  const [formMultipleSortie, setFormMultipleSortie] = useState('');
+  const [messageMultiple, setMessageMultiple] = useState('');
+
   useEffect(() => {
     api.getEmployees().then((emps) => {
       const actifs = emps.filter((e) => e.actif);
@@ -79,9 +86,21 @@ export default function Calendrier() {
     setPointagesMois(Object.fromEntries(rows.map((p) => [p.date, p])));
   };
 
+  const chargerResume = async () => {
+    if (!employeeId) return;
+    try {
+      const r = await api.getRapport({ employee_id: employeeId, mois });
+      setResume(r);
+    } catch {
+      setResume(null);
+    }
+  };
+
   useEffect(() => {
     chargerCalendrier();
+    chargerResume();
     setDateSelectionnee(null);
+    setJoursSelectionnes([]);
   }, [employeeId, mois]);
 
   const selectionnerJour = (dateStr) => {
@@ -102,6 +121,7 @@ export default function Calendrier() {
         heure_sortie: timeInputToIso(dateSelectionnee, formHeureSortie),
       });
       chargerCalendrier();
+      chargerResume();
     } catch (err) {
       setErreur(err.message);
     }
@@ -114,6 +134,7 @@ export default function Calendrier() {
     await api.deletePointage(p.id);
     setDateSelectionnee(null);
     chargerCalendrier();
+    chargerResume();
   };
 
   const appliquerPlage = async (e) => {
@@ -140,12 +161,49 @@ export default function Calendrier() {
       }
       setMessagePlage(`${dates.length} jour(s) mis a jour (${plage.date_debut} au ${plage.date_fin}).`);
       chargerCalendrier();
+      chargerResume();
     } catch (err) {
       setErreur(err.message);
     }
   };
 
   const joursDuMoisTries = joursDuMois(mois).filter(Boolean);
+
+  const basculerJourSelectionne = (dateStr) => {
+    setJoursSelectionnes((jours) =>
+      jours.includes(dateStr) ? jours.filter((d) => d !== dateStr) : [...jours, dateStr]
+    );
+  };
+
+  const basculerTousLesJours = () => {
+    setJoursSelectionnes((jours) => (jours.length === joursDuMoisTries.length ? [] : [...joursDuMoisTries]));
+  };
+
+  const appliquerAuxJoursSelectionnes = async (e) => {
+    e.preventDefault();
+    setMessageMultiple('');
+    setErreur('');
+    if (joursSelectionnes.length === 0) {
+      setErreur('Selectionnez au moins un jour');
+      return;
+    }
+    try {
+      for (const date of joursSelectionnes) {
+        await api.pointageManuel({
+          employee_id: employeeId,
+          date,
+          heure_entree: timeInputToIso(date, formMultipleEntree),
+          heure_sortie: timeInputToIso(date, formMultipleSortie),
+        });
+      }
+      setMessageMultiple(`${joursSelectionnes.length} jour(s) modifie(s).`);
+      setJoursSelectionnes([]);
+      chargerCalendrier();
+      chargerResume();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  };
 
   return (
     <div className="panel">
@@ -183,6 +241,19 @@ export default function Calendrier() {
           </button>
         </div>
       </div>
+
+      {resume && (
+        <div className="cadrans cadrans-compacts">
+          <div className="cadran">
+            <div className="cadran-valeur">{resume.total_heures.toFixed(2)} h</div>
+            <div className="cadran-label">Total heures du mois</div>
+          </div>
+          <div className="cadran">
+            <div className="cadran-valeur">{resume.heures_manquantes > 0 ? resume.heures_manquantes.toFixed(2) : '0'} h</div>
+            <div className="cadran-label">Heures manquantes</div>
+          </div>
+        </div>
+      )}
 
       {erreur && <p className="erreur">{erreur}</p>}
 
@@ -222,6 +293,13 @@ export default function Calendrier() {
           <table>
             <thead>
               <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    checked={joursSelectionnes.length === joursDuMoisTries.length}
+                    onChange={basculerTousLesJours}
+                  />
+                </th>
                 <th>Date</th>
                 <th>Jour</th>
                 <th>Entree</th>
@@ -236,6 +314,13 @@ export default function Calendrier() {
                 const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' });
                 return (
                   <tr key={dateStr} className={dateStr === dateSelectionnee ? 'ligne-selectionnee' : ''}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={joursSelectionnes.includes(dateStr)}
+                        onChange={() => basculerJourSelectionne(dateStr)}
+                      />
+                    </td>
                     <td>{dateStr}</td>
                     <td className="capitalize">{nomJour}</td>
                     <td>{p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-'}</td>
@@ -249,6 +334,37 @@ export default function Calendrier() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {vue === 'tableau' && joursSelectionnes.length > 0 && (
+        <div className="panneau-edition-jour">
+          <h4>{joursSelectionnes.length} jour(s) selectionne(s)</h4>
+          {messageMultiple && <p className="confirmation">{messageMultiple}</p>}
+          <form className="form-inline" onSubmit={appliquerAuxJoursSelectionnes}>
+            <label>
+              Heure d'entree:{' '}
+              <input
+                type="time"
+                value={formMultipleEntree}
+                onChange={(e) => setFormMultipleEntree(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              Heure de sortie:{' '}
+              <input
+                type="time"
+                value={formMultipleSortie}
+                onChange={(e) => setFormMultipleSortie(e.target.value)}
+                required
+              />
+            </label>
+            <button type="submit">Appliquer aux jours selectionnes</button>
+            <button type="button" className="secondary" onClick={() => setJoursSelectionnes([])}>
+              Deselectionner tout
+            </button>
+          </form>
         </div>
       )}
 

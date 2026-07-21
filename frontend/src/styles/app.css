@@ -343,6 +343,19 @@ button.sortie:hover {
   border-color: #bfdbfe;
 }
 
+.cadrans-compacts {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 220px));
+  margin-bottom: 20px;
+}
+
+.cadrans-compacts .cadran {
+  padding: 12px;
+}
+
+.cadrans-compacts .cadran-valeur {
+  font-size: 20px;
+}
+
 .cadran-valeur {
   font-size: 28px;
   font-weight: 700;
