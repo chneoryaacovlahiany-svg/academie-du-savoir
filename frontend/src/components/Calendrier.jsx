@@ -37,6 +37,11 @@ function joursDuMois(mois) {
   return cellules;
 }
 
+function dureeNetteDePause(heuresBrutes, pauseMinutes) {
+  if (heuresBrutes == null) return null;
+  return Math.max(0, heuresBrutes - (pauseMinutes || 0) / 60);
+}
+
 function listeDatesEntre(debut, fin) {
   const dates = [];
   const curseur = new Date(`${debut}T00:00:00`);
@@ -205,6 +210,31 @@ export default function Calendrier() {
     }
   };
 
+  const supprimerJoursSelectionnes = async () => {
+    setMessageMultiple('');
+    setErreur('');
+    const joursAvecPointage = joursSelectionnes.filter((date) => pointagesMois[date]);
+    if (joursAvecPointage.length === 0) {
+      setErreur('Aucun des jours selectionnes n\'a de pointage a supprimer');
+      return;
+    }
+    if (!confirm(`Supprimer le pointage de ${joursAvecPointage.length} jour(s) ?`)) return;
+    try {
+      for (const date of joursAvecPointage) {
+        await api.deletePointage(pointagesMois[date].id);
+      }
+      setMessageMultiple(`${joursAvecPointage.length} jour(s) supprime(s).`);
+      setJoursSelectionnes([]);
+      chargerCalendrier();
+      chargerResume();
+    } catch (err) {
+      setErreur(err.message);
+    }
+  };
+
+  const employeeCourant = employees.find((e) => String(e.id) === employeeId);
+  const pauseMinutesCourant = employeeCourant?.pause_minutes || 0;
+
   return (
     <div className="panel">
       <h2>Calendrier de pointage</h2>
@@ -281,7 +311,11 @@ export default function Calendrier() {
                 >
                   <span className="calendrier-jour-numero">{jour}</span>
                   <span className="calendrier-jour-detail">
-                    {p?.heures_travaillees != null ? formatDuree(p.heures_travaillees) : p ? 'incomplet' : ''}
+                    {p?.heures_travaillees != null
+                      ? formatDuree(dureeNetteDePause(p.heures_travaillees, pauseMinutesCourant))
+                      : p
+                      ? 'incomplet'
+                      : ''}
                   </span>
                 </button>
               );
@@ -304,6 +338,7 @@ export default function Calendrier() {
                 <th>Jour</th>
                 <th>Entree</th>
                 <th>Sortie</th>
+                <th>Pause</th>
                 <th>Total</th>
                 <th></th>
               </tr>
@@ -325,7 +360,8 @@ export default function Calendrier() {
                     <td className="capitalize">{nomJour}</td>
                     <td>{p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-'}</td>
                     <td>{p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-'}</td>
-                    <td>{formatDuree(p?.heures_travaillees)}</td>
+                    <td>{p?.heures_travaillees != null ? `${pauseMinutesCourant} min` : '-'}</td>
+                    <td>{formatDuree(dureeNetteDePause(p?.heures_travaillees, pauseMinutesCourant))}</td>
                     <td className="actions">
                       <button onClick={() => selectionnerJour(dateStr)}>Modifier</button>
                     </td>
@@ -361,6 +397,9 @@ export default function Calendrier() {
               />
             </label>
             <button type="submit">Appliquer aux jours selectionnes</button>
+            <button type="button" className="danger" onClick={supprimerJoursSelectionnes}>
+              Supprimer les jours selectionnes
+            </button>
             <button type="button" className="secondary" onClick={() => setJoursSelectionnes([])}>
               Deselectionner tout
             </button>
