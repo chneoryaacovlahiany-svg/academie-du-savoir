@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { dateLocale } = require('../calculs');
+const { chargerParametres } = require('../soldes');
 
 const router = express.Router();
 
@@ -15,6 +16,21 @@ function nowTime() {
 function computeHeures(entree, sortie) {
   const diffMs = new Date(sortie).getTime() - new Date(entree).getTime();
   return Math.max(0, diffMs / 1000 / 60 / 60);
+}
+
+// IP du client, en retirant le prefixe IPv4-mapped-IPv6 eventuel (::ffff:1.2.3.4).
+function ipClient(req) {
+  return (req.ip || req.socket.remoteAddress || '').replace(/^::ffff:/, '');
+}
+
+// Verifie que l'IP du client correspond a l'une des IP de bureau configurees
+// dans Parametres. Si aucune IP n'est configuree, la restriction est
+// desactivee (aucun blocage) pour ne pas bloquer un compte non configure.
+function ipBureauAutorisee(req) {
+  const ipBureau = (chargerParametres().ip_bureau || '').trim();
+  if (!ipBureau) return true;
+  const ipsAutorisees = ipBureau.split(',').map((ip) => ip.trim());
+  return ipsAutorisees.includes(ipClient(req));
 }
 
 // Statut du jour pour un employe (pointe ou non)
@@ -50,11 +66,19 @@ router.get('/', (req, res) => {
 
 // Pointage entree
 router.post('/entree', (req, res) => {
-  const { employee_id, date } = req.body;
+  const { employee_id, date, lieu } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id requis' });
 
   const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
   if (!employee) return res.status(404).json({ error: 'Employe introuvable' });
+
+  // Un pointage declare "bureau" doit provenir du reseau du bureau (IP configuree
+  // dans Parametres); un pointage "domicile" n'est pas restreint.
+  if (lieu === 'bureau' && !ipBureauAutorisee(req)) {
+    return res.status(403).json({
+      error: 'Pointage "bureau" refuse: cette connexion ne provient pas du reseau du bureau.',
+    });
+  }
 
   const jour = date || todayDate();
   const existing = db
@@ -66,15 +90,17 @@ router.post('/entree', (req, res) => {
   }
 
   const heure = nowTime();
+  const lieuFinal = lieu || null;
   if (existing) {
-    db.prepare('UPDATE pointages SET heure_entree = ?, heure_sortie = NULL, heures_travaillees = NULL WHERE id = ?').run(
+    db.prepare('UPDATE pointages SET heure_entree = ?, heure_sortie = NULL, heures_travaillees = NULL, lieu = ? WHERE id = ?').run(
       heure,
+      lieuFinal,
       existing.id
     );
   } else {
     db.prepare(
-      'INSERT INTO pointages (employee_id, date, heure_entree) VALUES (?, ?, ?)'
-    ).run(employee_id, jour, heure);
+      'INSERT INTO pointages (employee_id, date, heure_entree, lieu) VALUES (?, ?, ?, ?)'
+    ).run(employee_id, jour, heure, lieuFinal);
   }
 
   const result = db.prepare('SELECT * FROM pointages WHERE employee_id = ? AND date = ?').get(employee_id, jour);
@@ -111,8 +137,9 @@ router.post('/sortie', (req, res) => {
 });
 
 // Ajout ou correction manuelle par un administrateur (pour un employe/jour donne)
+// Correction admin: pas de verification d'IP (il ne s'agit pas d'un pointage en direct).
 router.post('/manuel', (req, res) => {
-  const { employee_id, date, heure_entree, heure_sortie } = req.body;
+  const { employee_id, date, heure_entree, heure_sortie, lieu } = req.body;
   if (!employee_id || !date) {
     return res.status(400).json({ error: 'employee_id et date sont requis' });
   }
@@ -129,12 +156,12 @@ router.post('/manuel', (req, res) => {
 
   if (existing) {
     db.prepare(
-      'UPDATE pointages SET heure_entree = ?, heure_sortie = ?, heures_travaillees = ? WHERE id = ?'
-    ).run(heure_entree || null, heure_sortie || null, heures_travaillees, existing.id);
+      'UPDATE pointages SET heure_entree = ?, heure_sortie = ?, heures_travaillees = ?, lieu = ? WHERE id = ?'
+    ).run(heure_entree || null, heure_sortie || null, heures_travaillees, lieu || null, existing.id);
   } else {
     db.prepare(
-      'INSERT INTO pointages (employee_id, date, heure_entree, heure_sortie, heures_travaillees) VALUES (?, ?, ?, ?, ?)'
-    ).run(employee_id, date, heure_entree || null, heure_sortie || null, heures_travaillees);
+      'INSERT INTO pointages (employee_id, date, heure_entree, heure_sortie, heures_travaillees, lieu) VALUES (?, ?, ?, ?, ?, ?)'
+    ).run(employee_id, date, heure_entree || null, heure_sortie || null, heures_travaillees, lieu || null);
   }
 
   const result = db.prepare('SELECT * FROM pointages WHERE employee_id = ? AND date = ?').get(employee_id, date);
@@ -148,12 +175,13 @@ router.put('/:id', (req, res) => {
 
   const heure_entree = req.body.heure_entree ?? existing.heure_entree;
   const heure_sortie = req.body.heure_sortie !== undefined ? req.body.heure_sortie : existing.heure_sortie;
+  const lieu = req.body.lieu !== undefined ? req.body.lieu : existing.lieu;
   const heures_travaillees =
     heure_entree && heure_sortie ? computeHeures(heure_entree, heure_sortie) : null;
 
   db.prepare(
-    'UPDATE pointages SET heure_entree = ?, heure_sortie = ?, heures_travaillees = ? WHERE id = ?'
-  ).run(heure_entree, heure_sortie, heures_travaillees, req.params.id);
+    'UPDATE pointages SET heure_entree = ?, heure_sortie = ?, heures_travaillees = ?, lieu = ? WHERE id = ?'
+  ).run(heure_entree, heure_sortie, heures_travaillees, lieu, req.params.id);
 
   const updated = db.prepare('SELECT * FROM pointages WHERE id = ?').get(req.params.id);
   res.json(updated);

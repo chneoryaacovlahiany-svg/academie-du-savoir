@@ -5,11 +5,14 @@ function chargerBareme() {
   return db.prepare('SELECT * FROM bareme_conges ORDER BY anciennete_annees').all();
 }
 
+// Parametres textuels (ex: liste d'IP), a ne pas convertir en nombre.
+const CLES_TEXTE = new Set(['ip_bureau']);
+
 function chargerParametres() {
   const rows = db.prepare('SELECT * FROM parametres').all();
   const params = {};
   for (const row of rows) {
-    params[row.cle] = Number(row.valeur);
+    params[row.cle] = CLES_TEXTE.has(row.cle) ? row.valeur : Number(row.valeur);
   }
   return params;
 }

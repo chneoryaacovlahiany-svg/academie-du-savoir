@@ -458,6 +458,11 @@ button.sortie:hover {
   font-weight: 600;
 }
 
+.calendrier-jour-lieu {
+  font-size: 10px;
+  color: #6b7280;
+}
+
 .calendrier-jour-pointe {
   background: #f0fdf4;
   border-color: #bbf7d0;

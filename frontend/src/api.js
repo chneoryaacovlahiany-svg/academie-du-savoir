@@ -34,7 +34,7 @@ export const api = {
     return request(`/pointages${qs ? `?${qs}` : ''}`);
   },
   getStatutDuJour: (employeeId) => request(`/pointages/statut/${employeeId}`),
-  pointerEntree: (employee_id) => request('/pointages/entree', { method: 'POST', body: JSON.stringify({ employee_id }) }),
+  pointerEntree: (employee_id, lieu) => request('/pointages/entree', { method: 'POST', body: JSON.stringify({ employee_id, lieu }) }),
   pointerSortie: (employee_id) => request('/pointages/sortie', { method: 'POST', body: JSON.stringify({ employee_id }) }),
   updatePointage: (id, data) => request(`/pointages/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deletePointage: (id) => request(`/pointages/${id}`, { method: 'DELETE' }),

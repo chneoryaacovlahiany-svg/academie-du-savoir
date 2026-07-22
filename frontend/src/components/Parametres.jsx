@@ -127,6 +127,21 @@ export default function Parametres() {
         <button type="submit">Enregistrer les parametres</button>
       </form>
 
+      <h3>Restriction IP pour le pointage "Bureau"</h3>
+      <p className="aide">
+        IP publique(s) du bureau, separees par des virgules (ex: 88.12.34.56). Un employe qui pointe
+        en indiquant "Bureau" devra se connecter depuis l'une de ces IP; le pointage "Domicile" n'est
+        jamais restreint. Laissez vide pour desactiver la verification.
+      </p>
+      <form className="form-inline" onSubmit={enregistrerParametres}>
+        <input
+          placeholder="Ex: 88.12.34.56"
+          value={parametres.ip_bureau}
+          onChange={(e) => handleParametreChange('ip_bureau', e.target.value)}
+        />
+        <button type="submit">Enregistrer les parametres</button>
+      </form>
+
       <h3>Bareme des conges annuels par anciennete</h3>
       <p className="aide">
         A partir de combien d'annees d'anciennete l'employe acquiert-il ce nombre de jours par an ?

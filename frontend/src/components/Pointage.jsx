@@ -13,9 +13,16 @@ function formatDuree(heures) {
   return `${h}h${String(m).padStart(2, '0')}`;
 }
 
+function labelLieu(lieu) {
+  if (lieu === 'bureau') return 'Bureau';
+  if (lieu === 'domicile') return 'Domicile';
+  return null;
+}
+
 export default function Pointage() {
   const [employees, setEmployees] = useState([]);
   const [statuts, setStatuts] = useState({});
+  const [lieux, setLieux] = useState({});
   const [erreur, setErreur] = useState('');
 
   const charger = async () => {
@@ -34,7 +41,7 @@ export default function Pointage() {
   const pointer = async (employeeId, action) => {
     setErreur('');
     try {
-      if (action === 'entree') await api.pointerEntree(employeeId);
+      if (action === 'entree') await api.pointerEntree(employeeId, lieux[employeeId] || 'bureau');
       else await api.pointerSortie(employeeId);
       charger();
     } catch (err) {
@@ -63,8 +70,21 @@ export default function Pointage() {
               <div className="carte-poste">{emp.poste}</div>
               <div className="carte-heures">
                 Entree: {formatHeure(statut?.heure_entree)} | Sortie: {formatHeure(statut?.heure_sortie)}
+                {labelLieu(statut?.lieu) && ` (${labelLieu(statut.lieu)})`}
               </div>
               {termine && <div className="carte-total">Total: {formatDuree(statut.heures_travaillees)}</div>}
+              {!pointe && !termine && (
+                <label className="champ-date-embauche">
+                  Lieu de pointage
+                  <select
+                    value={lieux[emp.id] || 'bureau'}
+                    onChange={(e) => setLieux({ ...lieux, [emp.id]: e.target.value })}
+                  >
+                    <option value="bureau">Bureau</option>
+                    <option value="domicile">Domicile</option>
+                  </select>
+                </label>
+              )}
               <div className="carte-actions">
                 <button
                   className="entree"

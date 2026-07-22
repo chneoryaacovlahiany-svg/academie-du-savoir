@@ -36,6 +36,7 @@ db.exec(`
     heure_entree TEXT,
     heure_sortie TEXT,
     heures_travaillees REAL,
+    lieu TEXT,
     UNIQUE(employee_id, date)
   );
 
@@ -103,6 +104,11 @@ if (!colonnesHoraires.includes('pause_appliquee')) {
   db.exec('ALTER TABLE horaires_travail ADD COLUMN pause_appliquee INTEGER NOT NULL DEFAULT 1');
 }
 
+const colonnesPointages = db.prepare("PRAGMA table_info(pointages)").all().map((c) => c.name);
+if (!colonnesPointages.includes('lieu')) {
+  db.exec('ALTER TABLE pointages ADD COLUMN lieu TEXT');
+}
+
 // Parametres par defaut (modifiables dans l'onglet Parametres).
 // A verifier avec un comptable / conseiller en paie avant utilisation reelle.
 const parametresDefaut = {
@@ -113,6 +119,7 @@ const parametresDefaut = {
   majoration_heures_sup_150: '1.5',
   plafond_conges_maladie: '90',
   accumulation_maladie_mois: '1.5',
+  ip_bureau: '',
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {

@@ -17,6 +17,12 @@ function isoToTimeInput(iso) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
+function labelLieu(lieu) {
+  if (lieu === 'bureau') return 'Bureau';
+  if (lieu === 'domicile') return 'Domicile';
+  return '-';
+}
+
 function timeInputToIso(dateStr, timeStr) {
   if (!timeStr) return null;
   return new Date(`${dateStr}T${timeStr}:00`).toISOString();
@@ -57,9 +63,10 @@ export default function Calendrier() {
   const [dateSelectionnee, setDateSelectionnee] = useState(null);
   const [formHeureEntree, setFormHeureEntree] = useState('');
   const [formHeureSortie, setFormHeureSortie] = useState('');
+  const [formLieu, setFormLieu] = useState('bureau');
   const [erreur, setErreur] = useState('');
 
-  const [plage, setPlage] = useState({ date_debut: '', date_fin: '', heure_entree: '', heure_sortie: '' });
+  const [plage, setPlage] = useState({ date_debut: '', date_fin: '', heure_entree: '', heure_sortie: '', lieu: 'bureau' });
   const [messagePlage, setMessagePlage] = useState('');
 
   const [resume, setResume] = useState(null);
@@ -67,6 +74,7 @@ export default function Calendrier() {
   const [joursSelectionnes, setJoursSelectionnes] = useState([]);
   const [formMultipleEntree, setFormMultipleEntree] = useState('');
   const [formMultipleSortie, setFormMultipleSortie] = useState('');
+  const [formMultipleLieu, setFormMultipleLieu] = useState('bureau');
   const [messageMultiple, setMessageMultiple] = useState('');
 
   useEffect(() => {
@@ -109,6 +117,7 @@ export default function Calendrier() {
     const p = pointagesMois[dateStr];
     setFormHeureEntree(isoToTimeInput(p?.heure_entree));
     setFormHeureSortie(isoToTimeInput(p?.heure_sortie));
+    setFormLieu(p?.lieu || 'bureau');
   };
 
   const enregistrerJour = async () => {
@@ -119,6 +128,7 @@ export default function Calendrier() {
         date: dateSelectionnee,
         heure_entree: timeInputToIso(dateSelectionnee, formHeureEntree),
         heure_sortie: timeInputToIso(dateSelectionnee, formHeureSortie),
+        lieu: formLieu,
       });
       chargerCalendrier();
       chargerResume();
@@ -157,6 +167,7 @@ export default function Calendrier() {
           date,
           heure_entree: timeInputToIso(date, plage.heure_entree),
           heure_sortie: timeInputToIso(date, plage.heure_sortie),
+          lieu: plage.lieu,
         });
       }
       setMessagePlage(`${dates.length} jour(s) mis a jour (${plage.date_debut} au ${plage.date_fin}).`);
@@ -194,6 +205,7 @@ export default function Calendrier() {
           date,
           heure_entree: timeInputToIso(date, formMultipleEntree),
           heure_sortie: timeInputToIso(date, formMultipleSortie),
+          lieu: formMultipleLieu,
         });
       }
       setMessageMultiple(`${joursSelectionnes.length} jour(s) modifie(s).`);
@@ -327,6 +339,7 @@ export default function Calendrier() {
                       ? 'incomplet'
                       : ''}
                   </span>
+                  {p?.lieu && <span className="calendrier-jour-lieu">{labelLieu(p.lieu)}</span>}
                   {manquant && <span className="calendrier-jour-manque">-{formatDuree(manquant.ecart)}</span>}
                 </button>
               );
@@ -349,6 +362,7 @@ export default function Calendrier() {
                 <th>Jour</th>
                 <th>Entree</th>
                 <th>Sortie</th>
+                <th>Lieu</th>
                 <th>Pause</th>
                 <th>Total</th>
                 <th></th>
@@ -376,6 +390,7 @@ export default function Calendrier() {
                     <td className="capitalize">{nomJour}</td>
                     <td>{p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-'}</td>
                     <td>{p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-'}</td>
+                    <td>{p ? labelLieu(p.lieu) : '-'}</td>
                     <td>{p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} min` : '-'}</td>
                     <td>
                       {formatDuree(heuresEffectivesParDate[dateStr])}
@@ -415,6 +430,13 @@ export default function Calendrier() {
                 required
               />
             </label>
+            <label>
+              Lieu:{' '}
+              <select value={formMultipleLieu} onChange={(e) => setFormMultipleLieu(e.target.value)}>
+                <option value="bureau">Bureau</option>
+                <option value="domicile">Domicile</option>
+              </select>
+            </label>
             <button type="submit">Appliquer aux jours selectionnes</button>
             <button type="button" className="danger" onClick={supprimerJoursSelectionnes}>
               Supprimer les jours selectionnes
@@ -443,6 +465,13 @@ export default function Calendrier() {
             <label>
               Heure de sortie:{' '}
               <input type="time" value={formHeureSortie} onChange={(e) => setFormHeureSortie(e.target.value)} />
+            </label>
+            <label>
+              Lieu:{' '}
+              <select value={formLieu} onChange={(e) => setFormLieu(e.target.value)}>
+                <option value="bureau">Bureau</option>
+                <option value="domicile">Domicile</option>
+              </select>
             </label>
             <button onClick={enregistrerJour}>Enregistrer</button>
             {pointagesMois[dateSelectionnee] && (
@@ -497,6 +526,13 @@ export default function Calendrier() {
             onChange={(e) => setPlage({ ...plage, heure_sortie: e.target.value })}
             required
           />
+        </label>
+        <label>
+          Lieu:{' '}
+          <select value={plage.lieu} onChange={(e) => setPlage({ ...plage, lieu: e.target.value })}>
+            <option value="bureau">Bureau</option>
+            <option value="domicile">Domicile</option>
+          </select>
         </label>
         <button type="submit">Appliquer a la plage</button>
       </form>

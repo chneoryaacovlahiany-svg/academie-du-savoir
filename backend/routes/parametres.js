@@ -14,6 +14,15 @@ const CLES_CONNUES = [
   'accumulation_maladie_mois',
 ];
 
+// Une ou plusieurs IP separees par des virgules (ex: "88.12.34.56, 88.12.34.57").
+function ipBureauValide(valeur) {
+  if (valeur.trim() === '') return true;
+  return valeur
+    .split(',')
+    .map((ip) => ip.trim())
+    .every((ip) => /^(\d{1,3}\.){3}\d{1,3}$/.test(ip) && ip.split('.').every((o) => Number(o) <= 255));
+}
+
 router.get('/', (req, res) => {
   res.json(chargerParametres());
 });
@@ -28,6 +37,12 @@ router.put('/', (req, res) => {
       }
       maj.run(cle, String(valeur));
     }
+  }
+  if (req.body.ip_bureau !== undefined) {
+    if (!ipBureauValide(req.body.ip_bureau)) {
+      return res.status(400).json({ error: 'Valeur invalide pour ip_bureau (IPv4, separees par des virgules)' });
+    }
+    maj.run('ip_bureau', req.body.ip_bureau.trim());
   }
   res.json(chargerParametres());
 });
