@@ -113,17 +113,22 @@ function jourSemaineLundi0(dateStr) {
   return (new Date(`${dateStr}T00:00:00`).getDay() + 6) % 7;
 }
 
-// Duree prevue (en heures) entre deux horaires "HH:MM", pause quotidienne deduite.
-function heuresPrevuesJour(heureDebut, heureFin, pauseMinutes = 0) {
+// Duree prevue (en heures) entre deux horaires "HH:MM". La pause quotidienne
+// n'est deduite que si pauseAppliquee est vrai (coche "Pause" du jour, reglee
+// dans la plage horaire de l'employe).
+function heuresPrevuesJour(heureDebut, heureFin, pauseMinutes = 0, pauseAppliquee = true) {
   if (!heureDebut || !heureFin) return 0;
   const [h1, m1] = heureDebut.split(':').map(Number);
   const [h2, m2] = heureFin.split(':').map(Number);
   const brut = Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1)) / 60;
-  return Math.max(0, brut - pauseMinutes / 60);
+  const pauseADeduire = pauseAppliquee ? pauseMinutes : 0;
+  return Math.max(0, brut - pauseADeduire / 60);
 }
 
 // Heures effectivement payees pour un pointage:
-// - la pause quotidienne est toujours deduite;
+// - la pause quotidienne est deduite seulement si la case "Pause" du jour
+//   (horaireJour.pause_appliquee) est cochee, ou si aucun horaire n'est
+//   defini ce jour-la (comportement par defaut);
 // - si l'employe n'a PAS droit aux heures supplementaires et qu'une plage
 //   horaire est definie ce jour-la, la sortie est plafonnee a l'heure de fin
 //   prevue (le temps travaille au-dela n'est pas paye du tout, ni en heures
@@ -142,7 +147,10 @@ function heuresEffectivesJour(pointage, horaireJour, droitHeuresSup, pauseMinute
     }
   }
 
-  return Math.max(0, heuresBrutes - pauseMinutes / 60);
+  const pauseAppliquee = horaireJour ? !!horaireJour.pause_appliquee : true;
+  const pauseADeduire = pauseAppliquee ? pauseMinutes : 0;
+
+  return Math.max(0, heuresBrutes - pauseADeduire / 60);
 }
 
 module.exports = {

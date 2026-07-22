@@ -9,7 +9,7 @@ const JOURS_SEMAINE_NOMS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', '
 
 function horaireParDefaut(jourSemaine) {
   const jourOuvre = jourSemaine <= 4; // Lundi a Vendredi par defaut
-  return { jour_semaine: jourSemaine, heure_debut: '09:00', heure_fin: '17:00', actif: jourOuvre };
+  return { jour_semaine: jourSemaine, heure_debut: '09:00', heure_fin: '17:00', actif: jourOuvre, pause_appliquee: true };
 }
 
 const EMPLOYE_VIDE = {
@@ -120,6 +120,7 @@ export default function Employees() {
               heure_debut: existant.heure_debut || '09:00',
               heure_fin: existant.heure_fin || '17:00',
               actif: !!existant.actif,
+              pause_appliquee: existant.pause_appliquee === undefined ? true : !!existant.pause_appliquee,
             }
           : horaireParDefaut(jour)
       );
@@ -315,10 +316,11 @@ export default function Employees() {
             })()}
           </h4>
           <p className="aide">
-            La pause quotidienne et le droit aux heures supplementaires se reglent dans le
-            formulaire de l'employe ci-dessus. Pour les employes au salaire mensuel fixe, un ecart
-            entre ces heures et les heures reellement payees (retard, depart anticipe) sera deduit
-            du salaire dans le Rapport & Paie.
+            Le droit aux heures supplementaires se regle dans le formulaire de l'employe
+            ci-dessus. La case "Pause" deduit la pause (definie ci-dessus en minutes) des heures
+            de ce jour-la: decochez-la pour une demi-journee sans pause. Pour les employes au
+            salaire mensuel fixe, un ecart entre ces heures et les heures reellement payees
+            (retard, depart anticipe) sera deduit du salaire dans le Rapport & Paie.
           </p>
           {messageHoraire && <p className="confirmation">{messageHoraire}</p>}
           <table>
@@ -328,6 +330,7 @@ export default function Employees() {
                 <th>Travaille</th>
                 <th>Heure debut</th>
                 <th>Heure fin</th>
+                <th>Pause</th>
               </tr>
             </thead>
             <tbody>
@@ -355,6 +358,14 @@ export default function Employees() {
                       value={ligne.heure_fin}
                       disabled={!ligne.actif}
                       onChange={(e) => modifierLigneHoraire(ligne.jour_semaine, 'heure_fin', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={ligne.pause_appliquee}
+                      disabled={!ligne.actif}
+                      onChange={(e) => modifierLigneHoraire(ligne.jour_semaine, 'pause_appliquee', e.target.checked)}
                     />
                   </td>
                 </tr>

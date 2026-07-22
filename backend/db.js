@@ -73,6 +73,7 @@ db.exec(`
     heure_debut TEXT,
     heure_fin TEXT,
     actif INTEGER NOT NULL DEFAULT 1,
+    pause_appliquee INTEGER NOT NULL DEFAULT 1,
     UNIQUE(employee_id, jour_semaine)
   );
 `);
@@ -95,6 +96,11 @@ if (!colonnesEmployees.includes('pause_minutes')) {
 }
 if (!colonnesEmployees.includes('droit_heures_sup')) {
   db.exec('ALTER TABLE employees ADD COLUMN droit_heures_sup INTEGER NOT NULL DEFAULT 1');
+}
+
+const colonnesHoraires = db.prepare("PRAGMA table_info(horaires_travail)").all().map((c) => c.name);
+if (!colonnesHoraires.includes('pause_appliquee')) {
+  db.exec('ALTER TABLE horaires_travail ADD COLUMN pause_appliquee INTEGER NOT NULL DEFAULT 1');
 }
 
 // Parametres par defaut (modifiables dans l'onglet Parametres).

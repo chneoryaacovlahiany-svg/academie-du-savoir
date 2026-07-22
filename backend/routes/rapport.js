@@ -75,25 +75,30 @@ router.get('/', (req, res) => {
     const horaires = db.prepare('SELECT * FROM horaires_travail WHERE employee_id = ?').all(emp.id);
     const horaireParJour = Object.fromEntries(horaires.map((h) => [h.jour_semaine, h]));
 
-    // Heures effectivement payees par pointage: pause quotidienne deduite, et
-    // sortie plafonnee a l'heure de fin prevue si l'employe n'a pas droit aux
-    // heures supplementaires (le depassement n'est alors pas paye du tout).
+    // Heures effectivement payees par pointage: pause quotidienne deduite
+    // seulement si la case "Pause" est cochee pour ce jour-la dans la plage
+    // horaire de l'employe, et sortie plafonnee a l'heure de fin prevue si
+    // l'employe n'a pas droit aux heures supplementaires (le depassement n'est
+    // alors pas paye du tout).
     const heuresEffectivesParDate = {};
+    const pauseAppliqueeParDate = {};
     for (const p of pointages) {
       const horaireJour = horaireParJour[jourSemaineLundi0(p.date)];
       heuresEffectivesParDate[p.date] = heuresEffectivesJour(p, horaireJour, droitHeuresSup, pauseMinutes);
+      pauseAppliqueeParDate[p.date] = (horaireJour ? !!horaireJour.pause_appliquee : true) ? pauseMinutes : 0;
     }
     const totalHeures = Object.values(heuresEffectivesParDate).reduce((acc, h) => acc + h, 0);
     const joursTravailles = pointages.filter((p) => p.heures_travaillees != null).length;
 
-    // Heures prevues sur tout le mois (plage horaire, pause deduite), independamment
-    // des pointages: c'est le volume d'heures que l'employe est cense faire.
+    // Heures prevues sur tout le mois (plage horaire, pause deduite selon la
+    // case "Pause" du jour), independamment des pointages: c'est le volume
+    // d'heures que l'employe est cense faire.
     let heuresAEffectuer = 0;
     if (horaires.length > 0) {
       for (const date of datesEntre(debut, fin)) {
         const horaireJour = horaireParJour[jourSemaineLundi0(date)];
         if (!horaireJour || !horaireJour.actif) continue;
-        heuresAEffectuer += heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes);
+        heuresAEffectuer += heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes, horaireJour.pause_appliquee);
       }
     }
 
@@ -117,7 +122,7 @@ router.get('/', (req, res) => {
         if (joursFeriesDates.has(p.date)) continue;
         if (conges.some((c) => c.date_debut <= p.date && c.date_fin >= p.date)) continue;
 
-        const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes);
+        const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes, horaireJour.pause_appliquee);
         if (heuresPrevues <= 0) continue;
         const ecart = Math.max(0, heuresPrevues - heuresEffectivesParDate[p.date]);
         if (ecart > 0.001) {
@@ -191,7 +196,11 @@ router.get('/', (req, res) => {
       montant_jours_feries: Math.round(montantJoursFeries * 100) / 100,
       montant_deduction_horaire: Math.round(montantDeduction * 100) / 100,
       montant_total: Math.round(montantTotal * 100) / 100,
-      pointages,
+      pointages: pointages.map((p) => ({
+        ...p,
+        heures_effectives: Math.round((heuresEffectivesParDate[p.date] || 0) * 100) / 100,
+        pause_appliquee_minutes: pauseAppliqueeParDate[p.date] ?? 0,
+      })),
       conges,
     };
   });

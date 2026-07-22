@@ -37,11 +37,6 @@ function joursDuMois(mois) {
   return cellules;
 }
 
-function dureeNetteDePause(heuresBrutes, pauseMinutes) {
-  if (heuresBrutes == null) return null;
-  return Math.max(0, heuresBrutes - (pauseMinutes || 0) / 60);
-}
-
 function listeDatesEntre(debut, fin) {
   const dates = [];
   const curseur = new Date(`${debut}T00:00:00`);
@@ -232,9 +227,13 @@ export default function Calendrier() {
     }
   };
 
-  const employeeCourant = employees.find((e) => String(e.id) === employeeId);
-  const pauseMinutesCourant = employeeCourant?.pause_minutes || 0;
   const joursManquantsParDate = Object.fromEntries((resume?.jours_manquants || []).map((j) => [j.date, j]));
+  const heuresEffectivesParDate = Object.fromEntries(
+    (resume?.pointages || []).map((p) => [p.date, p.heures_effectives])
+  );
+  const pauseAppliqueeParDate = Object.fromEntries(
+    (resume?.pointages || []).map((p) => [p.date, p.pause_appliquee_minutes])
+  );
 
   return (
     <div className="panel">
@@ -323,7 +322,7 @@ export default function Calendrier() {
                   <span className="calendrier-jour-numero">{jour}</span>
                   <span className="calendrier-jour-detail">
                     {p?.heures_travaillees != null
-                      ? formatDuree(dureeNetteDePause(p.heures_travaillees, pauseMinutesCourant))
+                      ? formatDuree(heuresEffectivesParDate[dateStr])
                       : p
                       ? 'incomplet'
                       : ''}
@@ -377,9 +376,9 @@ export default function Calendrier() {
                     <td className="capitalize">{nomJour}</td>
                     <td>{p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-'}</td>
                     <td>{p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-'}</td>
-                    <td>{p?.heures_travaillees != null ? `${pauseMinutesCourant} min` : '-'}</td>
+                    <td>{p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} min` : '-'}</td>
                     <td>
-                      {formatDuree(dureeNetteDePause(p?.heures_travaillees, pauseMinutesCourant))}
+                      {formatDuree(heuresEffectivesParDate[dateStr])}
                       {manquant && <span className="badge-manquant"> -{formatDuree(manquant.ecart)}</span>}
                     </td>
                     <td className="actions">

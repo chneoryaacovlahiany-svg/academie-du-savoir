@@ -21,17 +21,19 @@ router.put('/', (req, res) => {
   if (!employee) return res.status(404).json({ error: 'Employe introuvable' });
 
   const upsert = db.prepare(`
-    INSERT INTO horaires_travail (employee_id, jour_semaine, heure_debut, heure_fin, actif)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO horaires_travail (employee_id, jour_semaine, heure_debut, heure_fin, actif, pause_appliquee)
+    VALUES (?, ?, ?, ?, ?, ?)
     ON CONFLICT(employee_id, jour_semaine) DO UPDATE SET
       heure_debut = excluded.heure_debut,
       heure_fin = excluded.heure_fin,
-      actif = excluded.actif
+      actif = excluded.actif,
+      pause_appliquee = excluded.pause_appliquee
   `);
   for (const ligne of lignes) {
     const jourSemaine = Number(ligne.jour_semaine);
     if (Number.isNaN(jourSemaine) || jourSemaine < 0 || jourSemaine > 6) continue;
-    upsert.run(employee_id, jourSemaine, ligne.heure_debut || null, ligne.heure_fin || null, ligne.actif ? 1 : 0);
+    const pauseAppliquee = ligne.pause_appliquee === undefined ? true : ligne.pause_appliquee;
+    upsert.run(employee_id, jourSemaine, ligne.heure_debut || null, ligne.heure_fin || null, ligne.actif ? 1 : 0, pauseAppliquee ? 1 : 0);
   }
 
   const rows = db
