@@ -130,21 +130,24 @@ function heuresPrevuesJour(heureDebut, heureFin, pauseMinutes = 0, pauseApplique
 //   (horaireJour.pause_appliquee) est cochee, ou si aucun horaire n'est
 //   defini ce jour-la (comportement par defaut);
 // - si l'employe n'a PAS droit aux heures supplementaires et qu'une plage
-//   horaire est definie ce jour-la, la sortie est plafonnee a l'heure de fin
-//   prevue (le temps travaille au-dela n'est pas paye du tout, ni en heures
-//   normales ni en heures sup).
+//   horaire est definie ce jour-la, le temps compte est plafonne des DEUX
+//   cotes a la plage prevue: une arrivee avant l'heure de debut ou une
+//   sortie apres l'heure de fin ne sont pas payees (ni en heures normales,
+//   ni en heures sup) au-dela de cette plage.
 function heuresEffectivesJour(pointage, horaireJour, droitHeuresSup, pauseMinutes = 0) {
   if (!pointage || pointage.heures_travaillees == null) return 0;
 
   let heuresBrutes = pointage.heures_travaillees;
 
-  if (!droitHeuresSup && horaireJour && horaireJour.actif && horaireJour.heure_fin && pointage.heure_sortie) {
+  if (!droitHeuresSup && horaireJour && horaireJour.actif && horaireJour.heure_debut && horaireJour.heure_fin && pointage.heure_entree && pointage.heure_sortie) {
+    const entreePrevue = new Date(`${pointage.date}T${horaireJour.heure_debut}:00`);
     const sortiePrevue = new Date(`${pointage.date}T${horaireJour.heure_fin}:00`);
+    const entreeReelle = new Date(pointage.heure_entree);
     const sortieReelle = new Date(pointage.heure_sortie);
-    if (sortieReelle > sortiePrevue) {
-      const entreeReelle = new Date(pointage.heure_entree);
-      heuresBrutes = Math.max(0, (sortiePrevue.getTime() - entreeReelle.getTime()) / (1000 * 60 * 60));
-    }
+
+    const entreeEffective = entreeReelle < entreePrevue ? entreePrevue : entreeReelle;
+    const sortieEffective = sortieReelle > sortiePrevue ? sortiePrevue : sortieReelle;
+    heuresBrutes = Math.max(0, (sortieEffective.getTime() - entreeEffective.getTime()) / (1000 * 60 * 60));
   }
 
   const pauseAppliquee = horaireJour ? !!horaireJour.pause_appliquee : true;
