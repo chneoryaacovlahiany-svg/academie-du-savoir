@@ -8,6 +8,13 @@ const STATUT_INFO = {
   critique: { label: 'Solde negatif', icone: '✕', classe: 'statut-critique' },
 };
 
+const TYPE_LABELS = {
+  conge_paye: 'Conge paye',
+  sans_solde: 'Sans solde',
+  maladie: 'Maladie',
+  autre: 'Autre',
+};
+
 function formatDateFr(dateStr) {
   if (!dateStr) return null;
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -18,6 +25,7 @@ export default function Dashboard() {
   const [employees, setEmployees] = useState([]);
   const [employeeFiltre, setEmployeeFiltre] = useState('');
   const [donnees, setDonnees] = useState(null);
+  const [congesEnAttente, setCongesEnAttente] = useState([]);
   const [erreur, setErreur] = useState('');
 
   const charger = async (employeeId) => {
@@ -29,13 +37,33 @@ export default function Dashboard() {
     }
   };
 
+  const chargerCongesEnAttente = async () => {
+    try {
+      setCongesEnAttente(await api.getConges({ statut: 'en_attente' }));
+    } catch {
+      setCongesEnAttente([]);
+    }
+  };
+
   useEffect(() => {
     api.getEmployees().then(setEmployees);
+    chargerCongesEnAttente();
   }, []);
 
   useEffect(() => {
     charger(employeeFiltre);
   }, [employeeFiltre]);
+
+  const nomEmploye = (id) => {
+    const e = employees.find((emp) => emp.id === id);
+    return e ? `${e.prenom} ${e.nom}` : `#${id}`;
+  };
+
+  const traiterConge = async (id, statut) => {
+    await api.updateStatutConge(id, statut);
+    chargerCongesEnAttente();
+    charger(employeeFiltre);
+  };
 
   if (erreur) return <div className="panel"><p className="erreur">{erreur}</p></div>;
   if (!donnees) return <div className="panel">Chargement...</div>;
@@ -91,9 +119,50 @@ export default function Dashboard() {
             {g.prochain_jour_ferie ? `Prochain ferie: ${g.prochain_jour_ferie.nom}` : 'Prochain jour ferie'}
           </div>
         </div>
+        <div className={`cadran ${congesEnAttente.length > 0 ? 'cadran-alerte' : ''}`}>
+          <div className="cadran-valeur">{congesEnAttente.length}</div>
+          <div className="cadran-label">Demande(s) de conge en attente</div>
+        </div>
       </div>
 
       {erreur && <p className="erreur">{erreur}</p>}
+
+      {congesEnAttente.length > 0 && (
+        <>
+          <h3>Demandes de conge en attente</h3>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employe</th>
+                  <th>Debut</th>
+                  <th>Fin</th>
+                  <th>Jours</th>
+                  <th>Type</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {congesEnAttente.map((c) => (
+                  <tr key={c.id}>
+                    <td>{nomEmploye(c.employee_id)}</td>
+                    <td>{c.date_debut}</td>
+                    <td>{c.date_fin}</td>
+                    <td>{c.nb_jours}</td>
+                    <td>{TYPE_LABELS[c.type] || c.type}</td>
+                    <td className="actions">
+                      <button onClick={() => traiterConge(c.id, 'approuve')}>Approuver</button>
+                      <button className="secondary" onClick={() => traiterConge(c.id, 'refuse')}>
+                        Refuser
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       <h3>Conges par employe</h3>
       <div className="table-scroll">

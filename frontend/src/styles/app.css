@@ -275,6 +275,16 @@ th {
   margin-bottom: 10px;
 }
 
+.rappel-pointage {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin: 0 0 10px;
+}
+
 .carte-actions {
   display: flex;
   gap: 8px;
@@ -341,6 +351,15 @@ button.sortie:hover {
 .cadran-principal {
   background: #eff6ff;
   border-color: #bfdbfe;
+}
+
+.cadran-alerte {
+  background: #fef3c7;
+  border-color: #fde68a;
+}
+
+.cadran-alerte .cadran-valeur {
+  color: #92400e;
 }
 
 .cadrans-compacts {
