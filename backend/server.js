@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 require('./db');
 
@@ -20,6 +22,10 @@ const horairesRouter = require('./routes/horaires');
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+// Necessaire derriere le proxy TLS d'un hebergeur (Render, etc.) pour que
+// req.secure et req.ip refletent la vraie connexion du client, pas le proxy.
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 
@@ -37,6 +43,21 @@ app.use('/api/bareme', requireAuth, requireAdmin, baremeRouter);
 app.use('/api/feries', requireAuth, requireAdmin, feriesRouter);
 app.use('/api/dashboard', requireAuth, requireAdmin, dashboardRouter);
 app.use('/api/horaires', requireAuth, horairesRouter);
+
+// En production, le build du frontend (frontend/dist) est servi directement
+// par ce meme serveur: un seul service a heberger, meme origine que l'API
+// (donc pas de souci de cookies cross-site).
+const distDir = path.join(__dirname, '../frontend/dist');
+const indexHtml = path.join(distDir, 'index.html');
+app.use(express.static(distDir));
+app.get(/^(?!\/api).*/, (req, res) => {
+  if (!fs.existsSync(indexHtml)) {
+    return res
+      .status(404)
+      .send('Frontend non compile: lancez "npm run build" dans frontend, ou utilisez "npm run dev" en developpement.');
+  }
+  res.sendFile(indexHtml);
+});
 
 app.use((err, req, res, next) => {
   console.error(err);

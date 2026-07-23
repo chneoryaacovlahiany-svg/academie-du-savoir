@@ -3,7 +3,10 @@ const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
 const { hashPassword } = require('./passwords');
 
-const dataDir = path.join(__dirname, 'data');
+// DATA_DIR permet de faire pointer la base vers un disque persistant chez un
+// hebergeur (ex: Render) plutot que le dossier local du code, qui est efface
+// a chaque deploiement.
+const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
 
 const dbPath = path.join(dataDir, 'pointeuse.db');

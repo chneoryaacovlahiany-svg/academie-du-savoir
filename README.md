@@ -51,3 +51,28 @@ Le frontend redirige les appels `/api` vers le backend (voir `frontend/vite.conf
 | GET/POST | `/api/conges` | Liste / demande de conges |
 | PUT | `/api/conges/:id/statut` | Approuver / refuser une demande |
 | GET | `/api/rapport?mois=YYYY-MM` | Rapport heures + montant par employe |
+
+## Deploiement (Render)
+
+Un seul service Node est deploye: le backend sert l'API et le build du frontend
+(meme origine, donc pas de souci de cookies cross-site).
+
+1. Sur [render.com](https://render.com), creer un **Web Service** relie a ce depot GitHub.
+2. **Root Directory** : laisser vide (racine du depot).
+3. **Build Command** :
+   ```
+   cd frontend && npm install && npm run build && cd ../backend && npm install
+   ```
+4. **Start Command** :
+   ```
+   cd backend && npm start
+   ```
+5. **Important - stockage persistant** : la base de donnees (SQLite) et la cle de
+   session sont des fichiers sur disque. Sans disque persistant, ils sont perdus a
+   chaque redeploiement. Sur Render, ajouter un **disque persistant** (Persistent
+   Disk, necessite un plan payant), avec un chemin de montage au choix (ex:
+   `/var/data`), puis definir la variable d'environnement `DATA_DIR=/var/data`
+   sur le service.
+6. Une fois deploye, Render fournit une URL en `https://...` — c'est cette adresse
+   que les employes utilisent (au lieu de `localhost`), y compris depuis leur
+   telephone.

@@ -30,12 +30,12 @@ router.post('/login', (req, res) => {
     return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect' });
   }
   const token = signerToken({ id: utilisateur.id });
-  definirCookieSession(res, token);
+  definirCookieSession(res, req, token);
   res.json(infosUtilisateur(utilisateur));
 });
 
 router.post('/logout', (req, res) => {
-  effacerCookieSession(res);
+  effacerCookieSession(res, req);
   res.status(204).end();
 });
 

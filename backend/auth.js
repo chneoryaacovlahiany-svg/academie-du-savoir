@@ -8,8 +8,12 @@ const DUREE_SESSION_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours
 // Cle de signature des sessions: generee une fois et conservee sur disque
 // (a cote de la base de donnees), pour que les sessions survivent aux
 // redemarrages du serveur sans ajouter de dependance externe (pas de JWT).
+// DATA_DIR permet de pointer vers un disque persistant chez un hebergeur
+// (ex: Render) plutot que le dossier local, qui peut etre efface a chaque
+// deploiement.
 function cheminSecret() {
-  return path.join(__dirname, 'data', 'session-secret.txt');
+  const dataDir = process.env.DATA_DIR || path.join(__dirname, 'data');
+  return path.join(dataDir, 'session-secret.txt');
 }
 
 function chargerSecret() {
@@ -64,14 +68,17 @@ function parseCookies(req) {
   return cookies;
 }
 
-// Secure absent en local (http); a ajouter si l'app est un jour servie en https.
-function definirCookieSession(res, token) {
+// Secure ajoute automatiquement des que la connexion est en https (via le
+// proxy de l'hebergeur, cf. "trust proxy" dans server.js) - absent en local http.
+function definirCookieSession(res, req, token) {
   const maxAgeSecondes = Math.floor(DUREE_SESSION_MS / 1000);
-  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${maxAgeSecondes}; SameSite=Lax`);
+  const secure = req?.secure ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${COOKIE_NAME}=${encodeURIComponent(token)}; HttpOnly; Path=/; Max-Age=${maxAgeSecondes}; SameSite=Lax${secure}`);
 }
 
-function effacerCookieSession(res) {
-  res.setHeader('Set-Cookie', `${COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax`);
+function effacerCookieSession(res, req) {
+  const secure = req?.secure ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${COOKIE_NAME}=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${secure}`);
 }
 
 module.exports = {
