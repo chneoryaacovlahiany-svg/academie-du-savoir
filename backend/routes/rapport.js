@@ -22,9 +22,13 @@ function premierEtDernierJourMois(mois) {
   return { debut, fin };
 }
 
-// Rapport de synthese: heures travaillees, jours de conges, montant a payer
+// Rapport de synthese: heures travaillees, jours de conges, montant a payer.
+// Un compte employe ne peut jamais consulter le rapport d'un autre employe.
 router.get('/', (req, res) => {
   let { employee_id, debut, fin, mois } = req.query;
+  if (req.user.role === 'employe') {
+    employee_id = req.user.employee_id;
+  }
 
   if (mois) {
     ({ debut, fin } = premierEtDernierJourMois(mois));

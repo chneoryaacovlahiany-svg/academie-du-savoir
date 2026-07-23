@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
+import { useAuth } from '../AuthContext.jsx';
 
 const TYPES = [
   { value: 'conge_paye', label: 'Conge paye' },
@@ -19,6 +20,8 @@ const CONGE_VIDE = { employee_id: '', date_debut: '', date_fin: '', type: 'conge
 
 export default function Conges() {
   const { formatMontant } = useDevise();
+  const { user } = useAuth();
+  const estAdmin = user.role === 'admin';
   const [employees, setEmployees] = useState([]);
   const [conges, setConges] = useState([]);
   const [form, setForm] = useState(CONGE_VIDE);
@@ -28,6 +31,9 @@ export default function Conges() {
     const [emps, cgs] = await Promise.all([api.getEmployees(), api.getConges()]);
     setEmployees(emps);
     setConges(cgs);
+    if (!estAdmin && emps.length > 0) {
+      setForm((f) => ({ ...f, employee_id: String(emps[0].id) }));
+    }
   };
 
   useEffect(() => {
@@ -74,14 +80,16 @@ export default function Conges() {
       <h2>Conges & vacances</h2>
 
       <form className="form-inline" onSubmit={handleSubmit}>
-        <select name="employee_id" value={form.employee_id} onChange={handleChange} required>
-          <option value="">Employe...</option>
-          {employees.map((e) => (
-            <option key={e.id} value={e.id}>
-              {e.prenom} {e.nom} (conges: {e.solde_conges_disponible}j, maladie: {e.solde_maladie_disponible}j)
-            </option>
-          ))}
-        </select>
+        {estAdmin && (
+          <select name="employee_id" value={form.employee_id} onChange={handleChange} required>
+            <option value="">Employe...</option>
+            {employees.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.prenom} {e.nom} (conges: {e.solde_conges_disponible}j, maladie: {e.solde_maladie_disponible}j)
+              </option>
+            ))}
+          </select>
+        )}
         <input type="date" name="date_debut" value={form.date_debut} onChange={handleChange} required />
         <input type="date" name="date_fin" value={form.date_fin} onChange={handleChange} required />
         <select name="type" value={form.type} onChange={handleChange}>
@@ -123,17 +131,19 @@ export default function Conges() {
                 <span className={`badge badge-${c.statut}`}>{STATUT_LABELS[c.statut]}</span>
               </td>
               <td className="actions">
-                {c.statut !== 'approuve' && (
+                {estAdmin && c.statut !== 'approuve' && (
                   <button onClick={() => changerStatut(c.id, 'approuve')}>Approuver</button>
                 )}
-                {c.statut !== 'refuse' && (
+                {estAdmin && c.statut !== 'refuse' && (
                   <button className="secondary" onClick={() => changerStatut(c.id, 'refuse')}>
                     Refuser
                   </button>
                 )}
-                <button className="danger" onClick={() => supprimer(c.id)}>
-                  Supprimer
-                </button>
+                {estAdmin && (
+                  <button className="danger" onClick={() => supprimer(c.id)}>
+                    Supprimer
+                  </button>
+                )}
               </td>
             </tr>
           ))}

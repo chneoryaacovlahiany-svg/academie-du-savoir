@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { montantMaladiePourAbsence } = require('../calculs');
 const { chargerParametres } = require('../soldes');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -28,8 +29,10 @@ function ajouterMontantMaladie(conge) {
   return { ...conge, montant_estime: Math.round(montant_estime * 100) / 100 };
 }
 
+// Un compte employe ne voit que ses propres demandes, quel que soit le filtre envoye.
 router.get('/', (req, res) => {
-  const { employee_id, statut } = req.query;
+  const { statut } = req.query;
+  const employee_id = req.user.role === 'employe' ? req.user.employee_id : req.query.employee_id;
   let query = 'SELECT * FROM conges WHERE 1=1';
   const params = [];
   if (employee_id) {
@@ -45,8 +48,10 @@ router.get('/', (req, res) => {
   res.json(rows.map(ajouterMontantMaladie));
 });
 
+// Un compte employe ne peut demander un conge que pour lui-meme.
 router.post('/', (req, res) => {
-  const { employee_id, date_debut, date_fin, type, commentaire } = req.body;
+  const employee_id = req.user.role === 'employe' ? req.user.employee_id : req.body.employee_id;
+  const { date_debut, date_fin, type, commentaire } = req.body;
   if (!employee_id || !date_debut || !date_fin) {
     return res.status(400).json({ error: 'employee_id, date_debut et date_fin sont requis' });
   }
@@ -70,7 +75,7 @@ router.post('/', (req, res) => {
   res.status(201).json(ajouterMontantMaladie(conge));
 });
 
-router.put('/:id/statut', (req, res) => {
+router.put('/:id/statut', requireAdmin, (req, res) => {
   const { statut } = req.body;
   if (!STATUTS_VALIDES.includes(statut)) {
     return res.status(400).json({ error: 'Statut invalide' });
@@ -84,7 +89,7 @@ router.put('/:id/statut', (req, res) => {
   res.json(ajouterMontantMaladie(updated));
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAdmin, (req, res) => {
   const info = db.prepare('DELETE FROM conges WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'Conge introuvable' });
   res.status(204).end();

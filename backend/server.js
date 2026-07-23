@@ -3,6 +3,10 @@ const cors = require('cors');
 
 require('./db');
 
+const { requireAuth, requireAdmin } = require('./middleware/auth');
+
+const authRouter = require('./routes/auth');
+const usersRouter = require('./routes/users');
 const employeesRouter = require('./routes/employees');
 const pointagesRouter = require('./routes/pointages');
 const congesRouter = require('./routes/conges');
@@ -21,15 +25,18 @@ app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
-app.use('/api/employees', employeesRouter);
-app.use('/api/pointages', pointagesRouter);
-app.use('/api/conges', congesRouter);
-app.use('/api/rapport', rapportRouter);
-app.use('/api/parametres', parametresRouter);
-app.use('/api/bareme', baremeRouter);
-app.use('/api/feries', feriesRouter);
-app.use('/api/dashboard', dashboardRouter);
-app.use('/api/horaires', horairesRouter);
+app.use('/api/auth', authRouter);
+
+app.use('/api/users', requireAuth, requireAdmin, usersRouter);
+app.use('/api/employees', requireAuth, employeesRouter);
+app.use('/api/pointages', requireAuth, pointagesRouter);
+app.use('/api/conges', requireAuth, congesRouter);
+app.use('/api/rapport', requireAuth, rapportRouter);
+app.use('/api/parametres', requireAuth, requireAdmin, parametresRouter);
+app.use('/api/bareme', requireAuth, requireAdmin, baremeRouter);
+app.use('/api/feries', requireAuth, requireAdmin, feriesRouter);
+app.use('/api/dashboard', requireAuth, requireAdmin, dashboardRouter);
+app.use('/api/horaires', requireAuth, horairesRouter);
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -534,3 +534,30 @@ button.sortie:hover {
   border-top: 2px solid #e5e7eb;
   border-bottom: none;
 }
+
+.app-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.panel-login {
+  width: 100%;
+  max-width: 360px;
+}
+
+.form-connexion {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.form-connexion label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #374151;
+}

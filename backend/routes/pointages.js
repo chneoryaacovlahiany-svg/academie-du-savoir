@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { dateLocale } = require('../calculs');
 const { chargerParametres } = require('../soldes');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -35,6 +36,9 @@ function ipBureauAutorisee(req) {
 
 // Statut du jour pour un employe (pointe ou non)
 router.get('/statut/:employeeId', (req, res) => {
+  if (req.user.role === 'employe' && Number(req.params.employeeId) !== req.user.employee_id) {
+    return res.status(403).json({ error: 'Acces refuse' });
+  }
   const date = req.query.date || todayDate();
   const row = db
     .prepare('SELECT * FROM pointages WHERE employee_id = ? AND date = ?')
@@ -42,9 +46,11 @@ router.get('/statut/:employeeId', (req, res) => {
   res.json(row || null);
 });
 
-// Liste des pointages avec filtres optionnels
+// Liste des pointages avec filtres optionnels. Un compte employe ne peut
+// jamais voir les pointages d'un autre employe, quel que soit le filtre envoye.
 router.get('/', (req, res) => {
-  const { employee_id, debut, fin } = req.query;
+  const { debut, fin } = req.query;
+  const employee_id = req.user.role === 'employe' ? req.user.employee_id : req.query.employee_id;
   let query = 'SELECT * FROM pointages WHERE 1=1';
   const params = [];
   if (employee_id) {
@@ -64,9 +70,10 @@ router.get('/', (req, res) => {
   res.json(rows);
 });
 
-// Pointage entree
+// Pointage entree. Un compte employe ne peut pointer que pour lui-meme.
 router.post('/entree', (req, res) => {
-  const { employee_id, date, lieu } = req.body;
+  const employee_id = req.user.role === 'employe' ? req.user.employee_id : req.body.employee_id;
+  const { date, lieu } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id requis' });
 
   const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
@@ -107,9 +114,10 @@ router.post('/entree', (req, res) => {
   res.status(201).json(result);
 });
 
-// Pointage sortie
+// Pointage sortie. Un compte employe ne peut pointer que pour lui-meme.
 router.post('/sortie', (req, res) => {
-  const { employee_id, date } = req.body;
+  const employee_id = req.user.role === 'employe' ? req.user.employee_id : req.body.employee_id;
+  const { date } = req.body;
   if (!employee_id) return res.status(400).json({ error: 'employee_id requis' });
 
   const jour = date || todayDate();
@@ -138,7 +146,7 @@ router.post('/sortie', (req, res) => {
 
 // Ajout ou correction manuelle par un administrateur (pour un employe/jour donne)
 // Correction admin: pas de verification d'IP (il ne s'agit pas d'un pointage en direct).
-router.post('/manuel', (req, res) => {
+router.post('/manuel', requireAdmin, (req, res) => {
   const { employee_id, date, heure_entree, heure_sortie, lieu } = req.body;
   if (!employee_id || !date) {
     return res.status(400).json({ error: 'employee_id et date sont requis' });
@@ -169,7 +177,7 @@ router.post('/manuel', (req, res) => {
 });
 
 // Correction manuelle par un administrateur
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM pointages WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Pointage introuvable' });
 
@@ -187,7 +195,7 @@ router.put('/:id', (req, res) => {
   res.json(updated);
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAdmin, (req, res) => {
   const info = db.prepare('DELETE FROM pointages WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'Pointage introuvable' });
   res.status(204).end();

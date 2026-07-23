@@ -6,9 +6,13 @@ import Calendrier from './components/Calendrier.jsx';
 import Conges from './components/Conges.jsx';
 import Rapport from './components/Rapport.jsx';
 import Parametres from './components/Parametres.jsx';
+import Comptes from './components/Comptes.jsx';
+import MonCompte from './components/MonCompte.jsx';
+import Login from './components/Login.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
+import { useAuth } from './AuthContext.jsx';
 
-const ONGLETS = [
+const ONGLETS_ADMIN = [
   { id: 'dashboard', label: 'Tableau de bord' },
   { id: 'pointage', label: 'Pointage' },
   { id: 'calendrier', label: 'Calendrier' },
@@ -16,11 +20,32 @@ const ONGLETS = [
   { id: 'conges', label: 'Conges' },
   { id: 'rapport', label: 'Rapport & Paie' },
   { id: 'parametres', label: 'Parametres' },
+  { id: 'comptes', label: 'Comptes' },
+  { id: 'mon-compte', label: 'Mon compte' },
+];
+
+const ONGLETS_EMPLOYE = [
+  { id: 'pointage', label: 'Pointage' },
+  { id: 'calendrier', label: 'Calendrier' },
+  { id: 'conges', label: 'Conges' },
+  { id: 'mon-compte', label: 'Mon compte' },
 ];
 
 export default function App() {
+  const { user, chargement } = useAuth();
   const [onglet, setOnglet] = useState('dashboard');
   const { devise, changerDevise } = useDevise();
+
+  if (chargement) {
+    return <div className="app">Chargement...</div>;
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  const onglets = user.role === 'admin' ? ONGLETS_ADMIN : ONGLETS_EMPLOYE;
+  const ongletActif = onglets.some((o) => o.id === onglet) ? onglet : onglets[0].id;
 
   return (
     <div className="app">
@@ -42,10 +67,10 @@ export default function App() {
       </header>
 
       <nav className="tabs">
-        {ONGLETS.map((o) => (
+        {onglets.map((o) => (
           <button
             key={o.id}
-            className={`tab ${onglet === o.id ? 'active' : ''}`}
+            className={`tab ${ongletActif === o.id ? 'active' : ''}`}
             onClick={() => setOnglet(o.id)}
           >
             {o.label}
@@ -54,13 +79,15 @@ export default function App() {
       </nav>
 
       <main className="content">
-        {onglet === 'dashboard' && <Dashboard />}
-        {onglet === 'pointage' && <Pointage />}
-        {onglet === 'calendrier' && <Calendrier />}
-        {onglet === 'employes' && <Employees />}
-        {onglet === 'conges' && <Conges />}
-        {onglet === 'rapport' && <Rapport />}
-        {onglet === 'parametres' && <Parametres />}
+        {ongletActif === 'dashboard' && <Dashboard />}
+        {ongletActif === 'pointage' && <Pointage />}
+        {ongletActif === 'calendrier' && <Calendrier />}
+        {ongletActif === 'employes' && <Employees />}
+        {ongletActif === 'conges' && <Conges />}
+        {ongletActif === 'rapport' && <Rapport />}
+        {ongletActif === 'parametres' && <Parametres />}
+        {ongletActif === 'comptes' && <Comptes />}
+        {ongletActif === 'mon-compte' && <MonCompte />}
       </main>
     </div>
   );

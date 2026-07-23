@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { DatabaseSync } = require('node:sqlite');
+const { hashPassword } = require('./passwords');
 
 const dataDir = path.join(__dirname, 'data');
 fs.mkdirSync(dataDir, { recursive: true });
@@ -77,6 +78,16 @@ db.exec(`
     pause_appliquee INTEGER NOT NULL DEFAULT 1,
     UNIQUE(employee_id, jour_semaine)
   );
+
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'employe',
+    employee_id INTEGER REFERENCES employees(id) ON DELETE SET NULL,
+    actif INTEGER NOT NULL DEFAULT 1,
+    date_creation TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);
@@ -143,6 +154,18 @@ const baremeDefaut = [
 const insererBareme = db.prepare('INSERT OR IGNORE INTO bareme_conges (anciennete_annees, jours_par_an) VALUES (?, ?)');
 for (const [annees, jours] of baremeDefaut) {
   insererBareme.run(annees, jours);
+}
+
+// Compte administrateur par defaut cree au premier demarrage (si aucun compte
+// n'existe encore). A changer immediatement depuis l'application.
+const nbUtilisateurs = db.prepare('SELECT COUNT(*) AS n FROM users').get().n;
+if (nbUtilisateurs === 0) {
+  db.prepare('INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?)').run(
+    'admin',
+    hashPassword('admin123'),
+    'admin'
+  );
+  console.log('Compte administrateur par defaut cree: identifiant "admin", mot de passe "admin123". Changez-le des la premiere connexion.');
 }
 
 module.exports = db;

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { dateLocale, moisLocal } from '../dateUtils';
+import { useAuth } from '../AuthContext.jsx';
 
 const JOURS_SEMAINE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -55,6 +56,8 @@ function listeDatesEntre(debut, fin) {
 }
 
 export default function Calendrier() {
+  const { user } = useAuth();
+  const estAdmin = user.role === 'admin';
   const [employees, setEmployees] = useState([]);
   const [employeeId, setEmployeeId] = useState('');
   const [mois, setMois] = useState(moisLocal());
@@ -331,7 +334,7 @@ export default function Calendrier() {
                 <button
                   key={dateStr}
                   className={`calendrier-jour ${p ? 'calendrier-jour-pointe' : ''} ${selectionne ? 'calendrier-jour-selectionne' : ''} ${manquant ? 'calendrier-jour-manquant' : ''}`}
-                  onClick={() => selectionnerJour(dateStr)}
+                  onClick={estAdmin ? () => selectionnerJour(dateStr) : undefined}
                   type="button"
                   title={manquant ? `Il manque ${formatDuree(manquant.ecart)} par rapport a la plage prevue` : undefined}
                 >
@@ -356,11 +359,13 @@ export default function Calendrier() {
             <thead>
               <tr>
                 <th>
-                  <input
-                    type="checkbox"
-                    checked={joursSelectionnes.length === joursDuMoisTries.length}
-                    onChange={basculerTousLesJours}
-                  />
+                  {estAdmin && (
+                    <input
+                      type="checkbox"
+                      checked={joursSelectionnes.length === joursDuMoisTries.length}
+                      onChange={basculerTousLesJours}
+                    />
+                  )}
                 </th>
                 <th>Date</th>
                 <th>Jour</th>
@@ -384,11 +389,13 @@ export default function Calendrier() {
                 return (
                   <tr key={dateStr} className={classesLigne}>
                     <td>
-                      <input
-                        type="checkbox"
-                        checked={joursSelectionnes.includes(dateStr)}
-                        onChange={() => basculerJourSelectionne(dateStr)}
-                      />
+                      {estAdmin && (
+                        <input
+                          type="checkbox"
+                          checked={joursSelectionnes.includes(dateStr)}
+                          onChange={() => basculerJourSelectionne(dateStr)}
+                        />
+                      )}
                     </td>
                     <td>{dateStr}</td>
                     <td className="capitalize">{nomJour}</td>
@@ -401,7 +408,7 @@ export default function Calendrier() {
                       {manquant && <span className="badge-manquant"> -{formatDuree(manquant.ecart)}</span>}
                     </td>
                     <td className="actions">
-                      <button onClick={() => selectionnerJour(dateStr)}>Modifier</button>
+                      {estAdmin && <button onClick={() => selectionnerJour(dateStr)}>Modifier</button>}
                     </td>
                   </tr>
                 );
@@ -417,7 +424,7 @@ export default function Calendrier() {
         </div>
       )}
 
-      {vue === 'tableau' && joursSelectionnes.length > 0 && (
+      {estAdmin && vue === 'tableau' && joursSelectionnes.length > 0 && (
         <div className="panneau-edition-jour">
           <h4>{joursSelectionnes.length} jour(s) selectionne(s)</h4>
           {messageMultiple && <p className="confirmation">{messageMultiple}</p>}
@@ -458,7 +465,7 @@ export default function Calendrier() {
         </div>
       )}
 
-      {dateSelectionnee && (
+      {estAdmin && dateSelectionnee && (
         <div className="panneau-edition-jour">
           <h4>
             {new Date(`${dateSelectionnee}T00:00:00`).toLocaleDateString('fr-FR', {
@@ -496,57 +503,61 @@ export default function Calendrier() {
         </div>
       )}
 
-      <h3>Inserer une plage de dates</h3>
-      <p className="aide">
-        Applique les memes heures d'entree/sortie a chaque jour entre les deux dates (ex: du lundi au jeudi).
-      </p>
-      <form className="form-inline" onSubmit={appliquerPlage}>
-        <label>
-          Du:{' '}
-          <input
-            type="date"
-            value={plage.date_debut}
-            onChange={(e) => setPlage({ ...plage, date_debut: e.target.value })}
-            required
-          />
-        </label>
-        <label>
-          Au:{' '}
-          <input
-            type="date"
-            value={plage.date_fin}
-            onChange={(e) => setPlage({ ...plage, date_fin: e.target.value })}
-            required
-          />
-        </label>
-        <label>
-          Heure d'entree:{' '}
-          <input
-            type="time"
-            value={plage.heure_entree}
-            onChange={(e) => setPlage({ ...plage, heure_entree: e.target.value })}
-            required
-          />
-        </label>
-        <label>
-          Heure de sortie:{' '}
-          <input
-            type="time"
-            value={plage.heure_sortie}
-            onChange={(e) => setPlage({ ...plage, heure_sortie: e.target.value })}
-            required
-          />
-        </label>
-        <label>
-          Lieu:{' '}
-          <select value={plage.lieu} onChange={(e) => setPlage({ ...plage, lieu: e.target.value })}>
-            <option value="bureau">Bureau</option>
-            <option value="domicile">Domicile</option>
-          </select>
-        </label>
-        <button type="submit">Appliquer a la plage</button>
-      </form>
-      {messagePlage && <p className="confirmation">{messagePlage}</p>}
+      {estAdmin && (
+        <>
+          <h3>Inserer une plage de dates</h3>
+          <p className="aide">
+            Applique les memes heures d'entree/sortie a chaque jour entre les deux dates (ex: du lundi au jeudi).
+          </p>
+          <form className="form-inline" onSubmit={appliquerPlage}>
+            <label>
+              Du:{' '}
+              <input
+                type="date"
+                value={plage.date_debut}
+                onChange={(e) => setPlage({ ...plage, date_debut: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Au:{' '}
+              <input
+                type="date"
+                value={plage.date_fin}
+                onChange={(e) => setPlage({ ...plage, date_fin: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Heure d'entree:{' '}
+              <input
+                type="time"
+                value={plage.heure_entree}
+                onChange={(e) => setPlage({ ...plage, heure_entree: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Heure de sortie:{' '}
+              <input
+                type="time"
+                value={plage.heure_sortie}
+                onChange={(e) => setPlage({ ...plage, heure_sortie: e.target.value })}
+                required
+              />
+            </label>
+            <label>
+              Lieu:{' '}
+              <select value={plage.lieu} onChange={(e) => setPlage({ ...plage, lieu: e.target.value })}>
+                <option value="bureau">Bureau</option>
+                <option value="domicile">Domicile</option>
+              </select>
+            </label>
+            <button type="submit">Appliquer a la plage</button>
+          </form>
+          {messagePlage && <p className="confirmation">{messagePlage}</p>}
+        </>
+      )}
     </div>
   );
 }

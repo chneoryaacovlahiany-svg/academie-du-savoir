@@ -1,10 +1,12 @@
 const express = require('express');
 const db = require('../db');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
+// Un compte employe ne peut consulter que sa propre plage horaire.
 router.get('/', (req, res) => {
-  const { employee_id } = req.query;
+  const employee_id = req.user.role === 'employe' ? req.user.employee_id : req.query.employee_id;
   if (!employee_id) return res.status(400).json({ error: 'employee_id requis' });
   const rows = db
     .prepare('SELECT * FROM horaires_travail WHERE employee_id = ? ORDER BY jour_semaine')
@@ -12,7 +14,7 @@ router.get('/', (req, res) => {
   res.json(rows);
 });
 
-router.put('/', (req, res) => {
+router.put('/', requireAdmin, (req, res) => {
   const { employee_id, lignes } = req.body;
   if (!employee_id || !Array.isArray(lignes)) {
     return res.status(400).json({ error: 'employee_id et lignes sont requis' });

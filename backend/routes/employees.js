@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { soldeCongesPayes, soldeMaladie } = require('../soldes');
 const { dateLocale } = require('../calculs');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -44,18 +45,25 @@ function resoudreRemuneration(body, existant) {
   return { type_paie: 'horaire', taux_horaire, salaire_mensuel: null, heures_semaine: null };
 }
 
+// Un compte employe ne voit que sa propre fiche (jamais celles des collegues).
 router.get('/', (req, res) => {
-  const rows = db.prepare('SELECT * FROM employees ORDER BY nom, prenom').all();
+  let rows = db.prepare('SELECT * FROM employees ORDER BY nom, prenom').all();
+  if (req.user.role === 'employe') {
+    rows = rows.filter((r) => r.id === req.user.employee_id);
+  }
   res.json(rows.map(ajouterSoldesCalcules));
 });
 
 router.get('/:id', (req, res) => {
+  if (req.user.role === 'employe' && Number(req.params.id) !== req.user.employee_id) {
+    return res.status(403).json({ error: 'Acces refuse' });
+  }
   const row = db.prepare('SELECT * FROM employees WHERE id = ?').get(req.params.id);
   if (!row) return res.status(404).json({ error: 'Employe introuvable' });
   res.json(ajouterSoldesCalcules(row));
 });
 
-router.post('/', (req, res) => {
+router.post('/', requireAdmin, (req, res) => {
   const { nom, prenom, poste, solde_conges, date_embauche } = req.body;
   if (!nom || !prenom) {
     return res.status(400).json({ error: 'Le nom et le prenom sont requis' });
@@ -91,7 +99,7 @@ router.post('/', (req, res) => {
   res.status(201).json(ajouterSoldesCalcules(created));
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', requireAdmin, (req, res) => {
   const existing = db.prepare('SELECT * FROM employees WHERE id = ?').get(req.params.id);
   if (!existing) return res.status(404).json({ error: 'Employe introuvable' });
 
@@ -135,7 +143,7 @@ router.put('/:id', (req, res) => {
   res.json(ajouterSoldesCalcules(updated));
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', requireAdmin, (req, res) => {
   const info = db.prepare('DELETE FROM employees WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'Employe introuvable' });
   res.status(204).end();

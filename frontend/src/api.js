@@ -22,6 +22,19 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  // Authentification
+  login: (email, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  getMe: () => request('/auth/me'),
+  changerMotDePasse: (mot_de_passe_actuel, nouveau_mot_de_passe) =>
+    request('/auth/password', { method: 'PUT', body: JSON.stringify({ mot_de_passe_actuel, nouveau_mot_de_passe }) }),
+
+  // Comptes (admin)
+  getUsers: () => request('/users'),
+  createUser: (data) => request('/users', { method: 'POST', body: JSON.stringify(data) }),
+  updateUser: (id, data) => request(`/users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteUser: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+
   // Employes
   getEmployees: () => request('/employees'),
   createEmployee: (data) => request('/employees', { method: 'POST', body: JSON.stringify(data) }),
