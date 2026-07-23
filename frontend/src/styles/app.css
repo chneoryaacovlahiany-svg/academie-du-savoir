@@ -528,3 +528,9 @@ button.sortie:hover {
 .ligne-selectionnee {
   background: #eff6ff;
 }
+
+.ligne-total td {
+  font-weight: 700;
+  border-top: 2px solid #e5e7eb;
+  border-bottom: none;
+}

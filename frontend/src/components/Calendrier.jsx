@@ -246,6 +246,10 @@ export default function Calendrier() {
   const pauseAppliqueeParDate = Object.fromEntries(
     (resume?.pointages || []).map((p) => [p.date, p.pause_appliquee_minutes])
   );
+  const totalColonneTotal = joursDuMoisTries.reduce(
+    (acc, dateStr) => acc + (heuresEffectivesParDate[dateStr] || 0),
+    0
+  );
 
   return (
     <div className="panel">
@@ -403,6 +407,12 @@ export default function Calendrier() {
                 );
               })}
             </tbody>
+            <tfoot>
+              <tr className="ligne-total">
+                <td colSpan={7}>Total du mois</td>
+                <td colSpan={2}>{formatDuree(totalColonneTotal)}</td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
