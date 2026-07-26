@@ -14,3 +14,11 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     </AuthProvider>
   </React.StrictMode>
 );
+
+// Necessaire pour que le navigateur propose "Installer l'application" sur
+// telephone (icone + plein ecran) - sans effet si non supporte (ex: http local).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
