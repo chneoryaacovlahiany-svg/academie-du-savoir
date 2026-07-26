@@ -253,6 +253,10 @@ export default function Calendrier() {
     (acc, dateStr) => acc + (heuresEffectivesParDate[dateStr] || 0),
     0
   );
+  const totalColonnePresence = joursDuMoisTries.reduce(
+    (acc, dateStr) => acc + (pointagesMois[dateStr]?.heures_travaillees || 0),
+    0
+  );
 
   return (
     <div className="panel">
@@ -374,6 +378,7 @@ export default function Calendrier() {
                 <th>Lieu</th>
                 <th>Pause</th>
                 <th>Total</th>
+                <th>Total presence</th>
                 <th></th>
               </tr>
             </thead>
@@ -407,6 +412,7 @@ export default function Calendrier() {
                       {formatDuree(heuresEffectivesParDate[dateStr])}
                       {manquant && <span className="badge-manquant"> -{formatDuree(manquant.ecart)}</span>}
                     </td>
+                    <td>{p?.heures_travaillees != null ? formatDuree(p.heures_travaillees) : '-'}</td>
                     <td className="actions">
                       {estAdmin && <button onClick={() => selectionnerJour(dateStr)}>Modifier</button>}
                     </td>
@@ -417,7 +423,8 @@ export default function Calendrier() {
             <tfoot>
               <tr className="ligne-total">
                 <td colSpan={7}>Total du mois</td>
-                <td colSpan={2}>{formatDuree(totalColonneTotal)}</td>
+                <td>{formatDuree(totalColonneTotal)}</td>
+                <td colSpan={2}>{formatDuree(totalColonnePresence)}</td>
               </tr>
             </tfoot>
           </table>

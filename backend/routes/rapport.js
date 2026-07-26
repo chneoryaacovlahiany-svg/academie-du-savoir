@@ -8,6 +8,7 @@ const {
   heuresPrevuesJour,
   heuresEffectivesJour,
   datesEntre,
+  pauseAppliqueePourJour,
 } = require('../calculs');
 const { chargerParametres, soldeCongesPayes, soldeMaladie } = require('../soldes');
 
@@ -89,7 +90,7 @@ router.get('/', (req, res) => {
     for (const p of pointages) {
       const horaireJour = horaireParJour[jourSemaineLundi0(p.date)];
       heuresEffectivesParDate[p.date] = heuresEffectivesJour(p, horaireJour, droitHeuresSup, pauseMinutes);
-      pauseAppliqueeParDate[p.date] = (horaireJour ? !!horaireJour.pause_appliquee : true) ? pauseMinutes : 0;
+      pauseAppliqueeParDate[p.date] = pauseAppliqueePourJour(horaireJour) ? pauseMinutes : 0;
     }
     const totalHeures = Object.values(heuresEffectivesParDate).reduce((acc, h) => acc + h, 0);
     const joursTravailles = pointages.filter((p) => p.heures_travaillees != null).length;

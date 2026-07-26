@@ -125,10 +125,21 @@ function heuresPrevuesJour(heureDebut, heureFin, pauseMinutes = 0, pauseApplique
   return Math.max(0, brut - pauseADeduire / 60);
 }
 
+// Determine si la pause doit s'appliquer pour un jour donne:
+// - pas d'horaire configure du tout -> comportement par defaut (pause appliquee);
+// - jour marque non travaille (actif=false) -> jamais de pause, meme si la
+//   case "Pause" (grisee, non modifiable dans l'interface pour ce jour) est
+//   restee cochee par defaut: elle ne reflete alors aucun choix reel;
+// - jour travaille -> respecte la case "Pause" reglee pour ce jour.
+function pauseAppliqueePourJour(horaireJour) {
+  if (!horaireJour) return true;
+  if (!horaireJour.actif) return false;
+  return !!horaireJour.pause_appliquee;
+}
+
 // Heures effectivement payees pour un pointage:
 // - la pause quotidienne est deduite seulement si la case "Pause" du jour
-//   (horaireJour.pause_appliquee) est cochee, ou si aucun horaire n'est
-//   defini ce jour-la (comportement par defaut);
+//   s'applique (cf. pauseAppliqueePourJour);
 // - si l'employe n'a PAS droit aux heures supplementaires et qu'une plage
 //   horaire est definie ce jour-la, le temps compte est plafonne des DEUX
 //   cotes a la plage prevue: une arrivee avant l'heure de debut ou une
@@ -150,8 +161,7 @@ function heuresEffectivesJour(pointage, horaireJour, droitHeuresSup, pauseMinute
     heuresBrutes = Math.max(0, (sortieEffective.getTime() - entreeEffective.getTime()) / (1000 * 60 * 60));
   }
 
-  const pauseAppliquee = horaireJour ? !!horaireJour.pause_appliquee : true;
-  const pauseADeduire = pauseAppliquee ? pauseMinutes : 0;
+  const pauseADeduire = pauseAppliqueePourJour(horaireJour) ? pauseMinutes : 0;
 
   return Math.max(0, heuresBrutes - pauseADeduire / 60);
 }
@@ -169,4 +179,5 @@ module.exports = {
   jourSemaineLundi0,
   heuresPrevuesJour,
   heuresEffectivesJour,
+  pauseAppliqueePourJour,
 };
