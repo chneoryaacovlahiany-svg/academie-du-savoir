@@ -47,15 +47,33 @@ app.use('/api/horaires', requireAuth, horairesRouter);
 // En production, le build du frontend (frontend/dist) est servi directement
 // par ce meme serveur: un seul service a heberger, meme origine que l'API
 // (donc pas de souci de cookies cross-site).
+//
+// index.html, le manifest et le service worker ne doivent JAMAIS etre mis en
+// cache par le navigateur: a chaque deploiement, Vite change le nom des
+// fichiers JS/CSS (hash dans le nom), et les anciens sont supprimes. Un
+// telephone qui garderait en cache une ancienne page ferait alors reference
+// a des fichiers qui n'existent plus -> page blanche persistante, meme apres
+// rechargement. Les fichiers sous /assets/ (nom hashe, change a chaque
+// build) peuvent en revanche etre mis en cache sans risque.
 const distDir = path.join(__dirname, '../frontend/dist');
 const indexHtml = path.join(distDir, 'index.html');
-app.use(express.static(distDir));
+app.use(
+  express.static(distDir, {
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('sw.js') || filePath.endsWith('manifest.webmanifest')) {
+        res.setHeader('Cache-Control', 'no-cache');
+      }
+    },
+  })
+);
 app.get(/^(?!\/api).*/, (req, res) => {
   if (!fs.existsSync(indexHtml)) {
     return res
       .status(404)
       .send('Frontend non compile: lancez "npm run build" dans frontend, ou utilisez "npm run dev" en developpement.');
   }
+  res.set('Cache-Control', 'no-cache');
   res.sendFile(indexHtml);
 });
 
