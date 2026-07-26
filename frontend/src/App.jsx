@@ -9,6 +9,7 @@ import Parametres from './components/Parametres.jsx';
 import Comptes from './components/Comptes.jsx';
 import MonCompte from './components/MonCompte.jsx';
 import Login from './components/Login.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 import { useAuth } from './AuthContext.jsx';
 
@@ -79,15 +80,17 @@ export default function App() {
       </nav>
 
       <main className="content">
-        {ongletActif === 'dashboard' && <Dashboard />}
-        {ongletActif === 'pointage' && <Pointage />}
-        {ongletActif === 'calendrier' && <Calendrier />}
-        {ongletActif === 'employes' && <Employees />}
-        {ongletActif === 'conges' && <Conges />}
-        {ongletActif === 'rapport' && <Rapport />}
-        {ongletActif === 'parametres' && <Parametres />}
-        {ongletActif === 'comptes' && <Comptes />}
-        {ongletActif === 'mon-compte' && <MonCompte />}
+        <ErrorBoundary key={ongletActif}>
+          {ongletActif === 'dashboard' && <Dashboard />}
+          {ongletActif === 'pointage' && <Pointage />}
+          {ongletActif === 'calendrier' && <Calendrier />}
+          {ongletActif === 'employes' && <Employees />}
+          {ongletActif === 'conges' && <Conges />}
+          {ongletActif === 'rapport' && <Rapport />}
+          {ongletActif === 'parametres' && <Parametres />}
+          {ongletActif === 'comptes' && <Comptes />}
+          {ongletActif === 'mon-compte' && <MonCompte />}
+        </ErrorBoundary>
       </main>
     </div>
   );

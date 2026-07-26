@@ -11,9 +11,13 @@ export default function Comptes() {
   const [message, setMessage] = useState('');
 
   const charger = async () => {
-    const [c, e] = await Promise.all([api.getUsers(), api.getEmployees()]);
-    setComptes(c);
-    setEmployees(e);
+    try {
+      const [c, e] = await Promise.all([api.getUsers(), api.getEmployees()]);
+      setComptes(c);
+      setEmployees(e);
+    } catch (err) {
+      setErreur(err.message);
+    }
   };
 
   useEffect(() => {

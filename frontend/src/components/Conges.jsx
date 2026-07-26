@@ -28,11 +28,15 @@ export default function Conges() {
   const [erreur, setErreur] = useState('');
 
   const charger = async () => {
-    const [emps, cgs] = await Promise.all([api.getEmployees(), api.getConges()]);
-    setEmployees(emps);
-    setConges(cgs);
-    if (!estAdmin && emps.length > 0) {
-      setForm((f) => ({ ...f, employee_id: String(emps[0].id) }));
+    try {
+      const [emps, cgs] = await Promise.all([api.getEmployees(), api.getConges()]);
+      setEmployees(emps);
+      setConges(cgs);
+      if (!estAdmin && emps.length > 0) {
+        setForm((f) => ({ ...f, employee_id: String(emps[0].id) }));
+      }
+    } catch (err) {
+      setErreur(err.message);
     }
   };
 
