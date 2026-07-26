@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
 import { moisLocal as moisCourant } from '../dateUtils';
+import { exporterCSV, exporterPDF } from '../export';
 
 export default function Rapport() {
   const { formatMontant } = useDevise();
@@ -26,6 +27,60 @@ export default function Rapport() {
   const totalGeneral = rapport.reduce((acc, r) => acc + r.montant_total, 0);
   const totalHeures = rapport.reduce((acc, r) => acc + r.total_heures, 0);
 
+  const entetesExport = [
+    'Employe',
+    'Mode de paie',
+    'Taux horaire',
+    'Heures travaillees',
+    'Conges payes (j)',
+    'Feries payes (j)',
+    'Solde conges',
+    'Solde maladie',
+    'Heures manquantes',
+    'Montant travail',
+    'Deduction horaire',
+    'Montant conges',
+    'Montant maladie',
+    'Montant heures sup',
+    'Montant feries',
+    'Montant total',
+  ];
+  const lignesExport = () =>
+    rapport.map((r) => [
+      `${r.prenom} ${r.nom}`,
+      r.type_paie === 'mensuel' ? 'Mensuel fixe' : 'Horaire',
+      `${formatMontant(r.taux_horaire)}/h`,
+      `${r.total_heures.toFixed(2)} h`,
+      r.jours_conges_payes,
+      r.jours_feries_payes,
+      `${r.solde_conges_disponible} j`,
+      `${r.solde_maladie_disponible} j`,
+      r.heures_manquantes > 0 ? `${r.heures_manquantes.toFixed(2)} h` : '-',
+      formatMontant(r.montant_travail),
+      r.montant_deduction_horaire > 0 ? `-${formatMontant(r.montant_deduction_horaire)}` : '-',
+      formatMontant(r.montant_conges),
+      formatMontant(r.montant_maladie),
+      formatMontant(r.montant_heures_sup),
+      formatMontant(r.montant_jours_feries),
+      formatMontant(r.montant_total),
+    ]);
+
+  const exporterRapportCSV = () => {
+    const lignes = [
+      ...lignesExport(),
+      ['Total', '', '', `${totalHeures.toFixed(2)} h`, '', '', '', '', '', '', '', '', '', '', '', formatMontant(totalGeneral)],
+    ];
+    exporterCSV(`rapport_paie_${mois}`, entetesExport, lignes);
+  };
+
+  const exporterRapportPDF = () => {
+    const lignes = [
+      ...lignesExport(),
+      ['Total', '', '', `${totalHeures.toFixed(2)} h`, '', '', '', '', '', '', '', '', '', '', '', formatMontant(totalGeneral)],
+    ];
+    exporterPDF(`rapport_paie_${mois}`, `Rapport & paie - ${mois}`, entetesExport, lignes, { fontSize: 6 });
+  };
+
   return (
     <div className="panel">
       <h2>Rapport & paie</h2>
@@ -35,6 +90,12 @@ export default function Rapport() {
           Mois:{' '}
           <input type="month" value={mois} onChange={(e) => setMois(e.target.value)} />
         </label>
+        <button type="button" className="secondary" onClick={exporterRapportCSV} disabled={rapport.length === 0}>
+          Exporter Excel
+        </button>
+        <button type="button" className="secondary" onClick={exporterRapportPDF} disabled={rapport.length === 0}>
+          Exporter PDF
+        </button>
       </div>
 
       {erreur && <p className="erreur">{erreur}</p>}

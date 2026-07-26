@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { dateLocale, moisLocal } from '../dateUtils';
 import { useAuth } from '../AuthContext.jsx';
+import { exporterCSV, exporterPDF } from '../export';
 
 const JOURS_SEMAINE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
@@ -258,6 +259,42 @@ export default function Calendrier() {
     0
   );
 
+  const employeSelectionne = employees.find((e) => String(e.id) === String(employeeId));
+  const nomFichierBase = employeSelectionne
+    ? `calendrier_${employeSelectionne.prenom}_${employeSelectionne.nom}_${mois}`.replace(/\s+/g, '_')
+    : `calendrier_${mois}`;
+
+  const entetesExport = ['Date', 'Jour', 'Entree', 'Sortie', 'Lieu', 'Pause', 'Total', 'Total presence'];
+  const lignesExport = () =>
+    joursDuMoisTries.map((dateStr) => {
+      const p = pointagesMois[dateStr];
+      const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' });
+      const manquant = joursManquantsParDate[dateStr];
+      return [
+        dateStr,
+        nomJour,
+        p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-',
+        p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-',
+        p ? labelLieu(p.lieu) : '-',
+        p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} min` : '-',
+        formatDuree(heuresEffectivesParDate[dateStr]) + (manquant ? ` (-${formatDuree(manquant.ecart)})` : ''),
+        p?.heures_travaillees != null ? formatDuree(p.heures_travaillees) : '-',
+      ];
+    });
+
+  const exporterTableauCSV = () => {
+    const lignes = [...lignesExport(), ['Total du mois', '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
+    exporterCSV(nomFichierBase, entetesExport, lignes);
+  };
+
+  const exporterTableauPDF = () => {
+    const lignes = [...lignesExport(), ['Total du mois', '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
+    const titre = employeSelectionne
+      ? `Calendrier - ${employeSelectionne.prenom} ${employeSelectionne.nom} - ${mois}`
+      : `Calendrier - ${mois}`;
+    exporterPDF(nomFichierBase, titre, entetesExport, lignes);
+  };
+
   return (
     <div className="panel">
       <h2>Calendrier de pointage</h2>
@@ -359,6 +396,14 @@ export default function Calendrier() {
         </div>
       ) : (
         <div className="table-scroll">
+          <div className="form-inline">
+            <button type="button" className="secondary" onClick={exporterTableauCSV}>
+              Exporter Excel
+            </button>
+            <button type="button" className="secondary" onClick={exporterTableauPDF}>
+              Exporter PDF
+            </button>
+          </div>
           <table>
             <thead>
               <tr>
