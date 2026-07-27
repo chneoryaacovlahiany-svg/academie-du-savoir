@@ -106,7 +106,7 @@ async function verifierRappels() {
       // Rappel preventif avant l'heure de debut prevue (en plus de celui qui
       // part pile a l'heure): un seul envoi, suivi independamment de la
       // sequence de rappels qui suit une fois l'heure prevue atteinte.
-      if (params.notif_entree_avant_minutes > 0) {
+      if (params.notif_entree_avant_actif && params.notif_entree_avant_minutes > 0) {
         const heureAvant = soustraireMinutes(horaireJour.heure_debut, params.notif_entree_avant_minutes);
         await verifierEtEnvoyerRappel(
           emp,

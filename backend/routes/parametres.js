@@ -21,7 +21,13 @@ const CLES_CONNUES = [
   'notif_sortie_intervalle_minutes',
 ];
 
-const CLES_BOOLEENNES = ['retards_actif', 'retards_plafond_mensuel_actif', 'retards_rattrapage_actif', 'notif_auto_actif'];
+const CLES_BOOLEENNES = [
+  'retards_actif',
+  'retards_plafond_mensuel_actif',
+  'retards_rattrapage_actif',
+  'notif_auto_actif',
+  'notif_entree_avant_actif',
+];
 
 // Une ou plusieurs IP separees par des virgules (ex: "88.12.34.56, 88.12.34.57").
 function ipBureauValide(valeur) {

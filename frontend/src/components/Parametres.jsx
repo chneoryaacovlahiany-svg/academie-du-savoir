@@ -313,6 +313,14 @@ export default function Parametres() {
           />
           {t('parametres.notifAutoActifLabel')}
         </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.notif_entree_avant_actif}
+            onChange={(e) => handleParametreCaseChange('notif_entree_avant_actif', e.target.checked)}
+          />
+          {t('parametres.notifEntreeAvantActifLabel')}
+        </label>
         <label className="champ-parametre">
           {t('parametres.notifEntreeAvantLabel')}
           <input
