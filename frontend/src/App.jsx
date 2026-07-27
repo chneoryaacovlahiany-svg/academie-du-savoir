@@ -12,6 +12,7 @@ import Login from './components/Login.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 import { useAuth } from './AuthContext.jsx';
+import { EntrepriseProvider, useEntreprise } from './EntrepriseContext.jsx';
 
 const ONGLETS_ADMIN = [
   { id: 'dashboard', label: 'Tableau de bord' },
@@ -32,10 +33,36 @@ const ONGLETS_EMPLOYE = [
   { id: 'mon-compte', label: 'Mon compte' },
 ];
 
+function EnteteApp() {
+  const { entreprise } = useEntreprise();
+  const { devise, changerDevise } = useDevise();
+
+  return (
+    <header className="app-header">
+      <div className="app-header-identite">
+        {entreprise.logo && <img src={entreprise.logo} alt="Logo" className="app-header-logo" />}
+        <div>
+          <h1>{entreprise.nom || 'Pointeuse'}</h1>
+          <p className="subtitle">Suivi des horaires, conges et paie des employes</p>
+        </div>
+      </div>
+      <label className="selecteur-devise">
+        Devise:{' '}
+        <select value={devise.code} onChange={(e) => changerDevise(e.target.value)}>
+          {DEVISES.map((d) => (
+            <option key={d.code} value={d.code}>
+              {d.label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </header>
+  );
+}
+
 export default function App() {
   const { user, chargement } = useAuth();
   const [onglet, setOnglet] = useState('dashboard');
-  const { devise, changerDevise } = useDevise();
 
   if (chargement) {
     return <div className="app">Chargement...</div>;
@@ -49,49 +76,36 @@ export default function App() {
   const ongletActif = onglets.some((o) => o.id === onglet) ? onglet : onglets[0].id;
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <div>
-          <h1>Pointeuse</h1>
-          <p className="subtitle">Suivi des horaires, conges et paie des employes</p>
-        </div>
-        <label className="selecteur-devise">
-          Devise:{' '}
-          <select value={devise.code} onChange={(e) => changerDevise(e.target.value)}>
-            {DEVISES.map((d) => (
-              <option key={d.code} value={d.code}>
-                {d.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      </header>
+    <EntrepriseProvider>
+      <div className="app">
+        <EnteteApp />
 
-      <nav className="tabs">
-        {onglets.map((o) => (
-          <button
-            key={o.id}
-            className={`tab ${ongletActif === o.id ? 'active' : ''}`}
-            onClick={() => setOnglet(o.id)}
-          >
-            {o.label}
-          </button>
-        ))}
-      </nav>
+        <nav className="tabs">
+          {onglets.map((o) => (
+            <button
+              key={o.id}
+              className={`tab ${ongletActif === o.id ? 'active' : ''}`}
+              onClick={() => setOnglet(o.id)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </nav>
 
-      <main className="content">
-        <ErrorBoundary key={ongletActif}>
-          {ongletActif === 'dashboard' && <Dashboard />}
-          {ongletActif === 'pointage' && <Pointage />}
-          {ongletActif === 'calendrier' && <Calendrier />}
-          {ongletActif === 'employes' && <Employees />}
-          {ongletActif === 'conges' && <Conges />}
-          {ongletActif === 'rapport' && <Rapport />}
-          {ongletActif === 'parametres' && <Parametres />}
-          {ongletActif === 'comptes' && <Comptes />}
-          {ongletActif === 'mon-compte' && <MonCompte />}
-        </ErrorBoundary>
-      </main>
-    </div>
+        <main className="content">
+          <ErrorBoundary key={ongletActif}>
+            {ongletActif === 'dashboard' && <Dashboard />}
+            {ongletActif === 'pointage' && <Pointage />}
+            {ongletActif === 'calendrier' && <Calendrier />}
+            {ongletActif === 'employes' && <Employees />}
+            {ongletActif === 'conges' && <Conges />}
+            {ongletActif === 'rapport' && <Rapport />}
+            {ongletActif === 'parametres' && <Parametres />}
+            {ongletActif === 'comptes' && <Comptes />}
+            {ongletActif === 'mon-compte' && <MonCompte />}
+          </ErrorBoundary>
+        </main>
+      </div>
+    </EntrepriseProvider>
   );
 }

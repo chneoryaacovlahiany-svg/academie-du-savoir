@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
+import { useEntreprise } from '../EntrepriseContext.jsx';
 import { moisLocal as moisCourant } from '../dateUtils';
 import { exporterCSV, exporterPDF } from '../export';
 
 export default function Rapport() {
   const { formatMontant } = useDevise();
+  const { entreprise } = useEntreprise();
   const [mois, setMois] = useState(moisCourant());
   const [rapport, setRapport] = useState([]);
   const [erreur, setErreur] = useState('');
@@ -70,7 +72,7 @@ export default function Rapport() {
       ...lignesExport(),
       ['Total', '', '', `${totalHeures.toFixed(2)} h`, '', '', '', '', '', '', '', '', '', '', '', formatMontant(totalGeneral)],
     ];
-    exporterCSV(`rapport_paie_${mois}`, entetesExport, lignes);
+    exporterCSV(`rapport_paie_${mois}`, entetesExport, lignes, { entreprise });
   };
 
   const exporterRapportPDF = () => {
@@ -78,7 +80,7 @@ export default function Rapport() {
       ...lignesExport(),
       ['Total', '', '', `${totalHeures.toFixed(2)} h`, '', '', '', '', '', '', '', '', '', '', '', formatMontant(totalGeneral)],
     ];
-    exporterPDF(`rapport_paie_${mois}`, `Rapport & paie - ${mois}`, entetesExport, lignes, { fontSize: 6 });
+    exporterPDF(`rapport_paie_${mois}`, `Rapport & paie - ${mois}`, entetesExport, lignes, { fontSize: 6, entreprise });
   };
 
   return (

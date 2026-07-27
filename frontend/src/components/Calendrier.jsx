@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { dateLocale, moisLocal } from '../dateUtils';
 import { useAuth } from '../AuthContext.jsx';
+import { useEntreprise } from '../EntrepriseContext.jsx';
 import { exporterCSV, exporterPDF } from '../export';
 
 const JOURS_SEMAINE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -58,6 +59,7 @@ function listeDatesEntre(debut, fin) {
 
 export default function Calendrier() {
   const { user } = useAuth();
+  const { entreprise } = useEntreprise();
   const estAdmin = user.role === 'admin';
   const [employees, setEmployees] = useState([]);
   const [employeeId, setEmployeeId] = useState('');
@@ -284,7 +286,7 @@ export default function Calendrier() {
 
   const exporterTableauCSV = () => {
     const lignes = [...lignesExport(), ['Total du mois', '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
-    exporterCSV(nomFichierBase, entetesExport, lignes);
+    exporterCSV(nomFichierBase, entetesExport, lignes, { entreprise });
   };
 
   const exporterTableauPDF = () => {
@@ -292,7 +294,7 @@ export default function Calendrier() {
     const titre = employeSelectionne
       ? `Calendrier - ${employeSelectionne.prenom} ${employeSelectionne.nom} - ${mois}`
       : `Calendrier - ${mois}`;
-    exporterPDF(nomFichierBase, titre, entetesExport, lignes);
+    exporterPDF(nomFichierBase, titre, entetesExport, lignes, { entreprise });
   };
 
   return (

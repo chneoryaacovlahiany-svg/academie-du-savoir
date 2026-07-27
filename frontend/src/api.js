@@ -91,4 +91,8 @@ export const api = {
   getHoraires: (employee_id) => request(`/horaires?employee_id=${employee_id}`),
   updateHoraires: (employee_id, lignes) =>
     request('/horaires', { method: 'PUT', body: JSON.stringify({ employee_id, lignes }) }),
+
+  // Informations de l'entreprise (nom, coordonnees, logo)
+  getEntreprise: () => request('/entreprise'),
+  updateEntreprise: (data) => request('/entreprise', { method: 'PUT', body: JSON.stringify(data) }),
 };

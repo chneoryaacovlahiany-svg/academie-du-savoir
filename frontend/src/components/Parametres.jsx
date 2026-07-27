@@ -1,5 +1,32 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useEntreprise } from '../EntrepriseContext.jsx';
+
+const TAILLE_MAX_LOGO = 240;
+
+function redimensionnerImage(fichier, tailleMax) {
+  return new Promise((resolve, reject) => {
+    const lecteur = new FileReader();
+    lecteur.onerror = () => reject(new Error('Impossible de lire le fichier'));
+    lecteur.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error('Fichier image invalide'));
+      image.onload = () => {
+        const ratio = Math.min(1, tailleMax / Math.max(image.width, image.height));
+        const largeur = Math.round(image.width * ratio);
+        const hauteur = Math.round(image.height * ratio);
+        const canvas = document.createElement('canvas');
+        canvas.width = largeur;
+        canvas.height = hauteur;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(image, 0, 0, largeur, hauteur);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      image.src = lecteur.result;
+    };
+    lecteur.readAsDataURL(fichier);
+  });
+}
 
 const CHAMPS_PARAMETRES = [
   { cle: 'heures_standard_jour', label: 'Heures standard par jour', step: '0.5' },
@@ -11,6 +38,7 @@ const CHAMPS_PARAMETRES = [
 ];
 
 export default function Parametres() {
+  const { entreprise, rafraichirEntreprise } = useEntreprise();
   const [parametres, setParametres] = useState(null);
   const [bareme, setBareme] = useState([]);
   const [feries, setFeries] = useState([]);
@@ -18,6 +46,43 @@ export default function Parametres() {
   const [annee, setAnnee] = useState(String(new Date().getFullYear()));
   const [message, setMessage] = useState('');
   const [erreur, setErreur] = useState('');
+
+  const [formEntreprise, setFormEntreprise] = useState(entreprise);
+  const [messageEntreprise, setMessageEntreprise] = useState('');
+  const [erreurEntreprise, setErreurEntreprise] = useState('');
+
+  useEffect(() => {
+    setFormEntreprise(entreprise);
+  }, [entreprise]);
+
+  const handleLogoChange = async (e) => {
+    const fichier = e.target.files?.[0];
+    if (!fichier) return;
+    setErreurEntreprise('');
+    try {
+      const dataUrl = await redimensionnerImage(fichier, TAILLE_MAX_LOGO);
+      setFormEntreprise({ ...formEntreprise, logo: dataUrl });
+    } catch (err) {
+      setErreurEntreprise(err.message);
+    }
+  };
+
+  const supprimerLogo = () => {
+    setFormEntreprise({ ...formEntreprise, logo: '' });
+  };
+
+  const enregistrerEntreprise = async (e) => {
+    e.preventDefault();
+    setErreurEntreprise('');
+    setMessageEntreprise('');
+    try {
+      await api.updateEntreprise(formEntreprise);
+      await rafraichirEntreprise();
+      setMessageEntreprise('Informations de la societe enregistrees.');
+    } catch (err) {
+      setErreurEntreprise(err.message);
+    }
+  };
 
   const charger = async () => {
     const [p, b, f] = await Promise.all([api.getParametres(), api.getBareme(), api.getFeries(annee)]);
@@ -109,6 +174,61 @@ export default function Parametres() {
 
       {erreur && <p className="erreur">{erreur}</p>}
       {message && <p className="confirmation">{message}</p>}
+
+      <h3>Informations de la societe</h3>
+      <p className="aide">
+        Ces informations et le logo apparaissent en en-tete de l'application et sur les exports PDF /
+        Excel du calendrier et du rapport de paie.
+      </p>
+      {erreurEntreprise && <p className="erreur">{erreurEntreprise}</p>}
+      {messageEntreprise && <p className="confirmation">{messageEntreprise}</p>}
+      <form className="form-parametres" onSubmit={enregistrerEntreprise}>
+        <label className="champ-parametre">
+          Nom de la societe
+          <input
+            type="text"
+            value={formEntreprise.nom}
+            onChange={(e) => setFormEntreprise({ ...formEntreprise, nom: e.target.value })}
+          />
+        </label>
+        <label className="champ-parametre">
+          Adresse
+          <input
+            type="text"
+            value={formEntreprise.adresse}
+            onChange={(e) => setFormEntreprise({ ...formEntreprise, adresse: e.target.value })}
+          />
+        </label>
+        <label className="champ-parametre">
+          Telephone
+          <input
+            type="text"
+            value={formEntreprise.telephone}
+            onChange={(e) => setFormEntreprise({ ...formEntreprise, telephone: e.target.value })}
+          />
+        </label>
+        <label className="champ-parametre">
+          Email
+          <input
+            type="email"
+            value={formEntreprise.email}
+            onChange={(e) => setFormEntreprise({ ...formEntreprise, email: e.target.value })}
+          />
+        </label>
+        <div className="champ-parametre">
+          Logo
+          <input type="file" accept="image/*" onChange={handleLogoChange} />
+          {formEntreprise.logo && (
+            <div className="form-inline">
+              <img src={formEntreprise.logo} alt="Apercu du logo" className="logo-apercu" />
+              <button type="button" className="secondary" onClick={supprimerLogo}>
+                Retirer le logo
+              </button>
+            </div>
+          )}
+        </div>
+        <button type="submit">Enregistrer les informations de la societe</button>
+      </form>
 
       <h3>Regles de calcul</h3>
       <form className="form-parametres" onSubmit={enregistrerParametres}>
