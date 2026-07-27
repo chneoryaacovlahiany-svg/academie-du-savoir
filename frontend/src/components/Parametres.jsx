@@ -302,6 +302,69 @@ export default function Parametres() {
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
 
+      <h3>{t('parametres.notifAutoTitre')}</h3>
+      <p className="aide">{t('parametres.notifAutoAide')}</p>
+      <form className="form-parametres" onSubmit={enregistrerParametres}>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.notif_auto_actif}
+            onChange={(e) => handleParametreCaseChange('notif_auto_actif', e.target.checked)}
+          />
+          {t('parametres.notifAutoActifLabel')}
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.notifEntreeNbRappelsLabel')}
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={parametres.notif_entree_nb_rappels}
+            onChange={(e) => handleParametreChange('notif_entree_nb_rappels', e.target.value)}
+          />
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.notifEntreeIntervalleLabel')}
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={parametres.notif_entree_intervalle_minutes}
+            onChange={(e) => handleParametreChange('notif_entree_intervalle_minutes', e.target.value)}
+          />
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.notifSortieNbRappelsLabel')}
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={parametres.notif_sortie_nb_rappels}
+            onChange={(e) => handleParametreChange('notif_sortie_nb_rappels', e.target.value)}
+          />
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.notifSortieIntervalleLabel')}
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={parametres.notif_sortie_intervalle_minutes}
+            onChange={(e) => handleParametreChange('notif_sortie_intervalle_minutes', e.target.value)}
+          />
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.notifSortieOptionsReportLabel')}
+          <input
+            type="text"
+            placeholder="20,30,40"
+            value={parametres.notif_sortie_options_report}
+            onChange={(e) => handleParametreChange('notif_sortie_options_report', e.target.value)}
+          />
+        </label>
+        <button type="submit">{t('parametres.enregistrerParametres')}</button>
+      </form>
+
       <h3>{t('parametres.restrictionIpTitre')}</h3>
       <p className="aide">{t('parametres.restrictionIpAide')}</p>
       <form className="form-inline" onSubmit={enregistrerParametres}>

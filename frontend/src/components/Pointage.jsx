@@ -7,6 +7,7 @@ import {
   permissionNotifications,
   demanderPermissionNotifications,
   envoyerNotificationUneFois,
+  abonnerAuxPush,
 } from '../notifications';
 
 // Lundi = 0 ... Dimanche = 6 (coherent avec le reste de l'app).
@@ -169,9 +170,24 @@ export default function Pointage() {
     }
   }, [user, horaires, statuts, maintenant]);
 
+  // Si la permission a deja ete accordee lors d'une session precedente,
+  // s'assure que cet appareil reste bien abonne (ex: apres reinstallation du
+  // service worker) sans redemander a l'utilisateur.
+  useEffect(() => {
+    if (user?.employee_id && permission === 'granted') {
+      abonnerAuxPush(user.employee_id).catch(() => {});
+    }
+  }, [user, permission]);
+
   const activerNotifications = async () => {
     const resultat = await demanderPermissionNotifications();
     setPermission(resultat);
+    if (resultat === 'granted' && user?.employee_id) {
+      abonnerAuxPush(user.employee_id).catch(() => {
+        // Abonnement push facultatif: si indisponible, les rappels reposeront
+        // uniquement sur les notifications tant que l'appli est ouverte.
+      });
+    }
   };
 
   const pointer = async (employeeId, action) => {

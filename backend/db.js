@@ -91,6 +91,24 @@ db.exec(`
     actif INTEGER NOT NULL DEFAULT 1,
     date_creation TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL UNIQUE,
+    cle_p256dh TEXT NOT NULL,
+    cle_auth TEXT NOT NULL,
+    date_creation TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS rappels_etat (
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    date TEXT NOT NULL,
+    type TEXT NOT NULL,
+    nb_envoyes INTEGER NOT NULL DEFAULT 0,
+    prochain_envoi TEXT,
+    PRIMARY KEY (employee_id, date, type)
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);
@@ -139,6 +157,12 @@ const parametresDefaut = {
   retards_plafond_mensuel_actif: '0',
   retards_plafond_mensuel_minutes: '120',
   retards_rattrapage_actif: '0',
+  notif_auto_actif: '0',
+  notif_entree_nb_rappels: '3',
+  notif_entree_intervalle_minutes: '15',
+  notif_sortie_nb_rappels: '3',
+  notif_sortie_intervalle_minutes: '15',
+  notif_sortie_options_report: '20,30,40',
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {

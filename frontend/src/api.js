@@ -95,4 +95,10 @@ export const api = {
   // Informations de l'entreprise (nom, coordonnees, logo)
   getEntreprise: () => request('/entreprise'),
   updateEntreprise: (data) => request('/entreprise', { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Notifications push (rappels de pointage, meme app fermee)
+  getClePubliquePush: () => request('/push/cle-publique'),
+  enregistrerAbonnementPush: (subscription, employee_id) =>
+    request('/push/abonnement', { method: 'POST', body: JSON.stringify({ ...subscription.toJSON(), employee_id }) }),
+  supprimerAbonnementPush: (endpoint) => request('/push/abonnement', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
 };

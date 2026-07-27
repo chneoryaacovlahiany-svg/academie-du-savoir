@@ -19,6 +19,7 @@ const feriesRouter = require('./routes/feries');
 const dashboardRouter = require('./routes/dashboard');
 const horairesRouter = require('./routes/horaires');
 const entrepriseRouter = require('./routes/entreprise');
+const pushRouter = require('./routes/push');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -46,6 +47,7 @@ app.use('/api/feries', requireAuth, requireAdmin, feriesRouter);
 app.use('/api/dashboard', requireAuth, requireAdmin, dashboardRouter);
 app.use('/api/horaires', requireAuth, horairesRouter);
 app.use('/api/entreprise', requireAuth, entrepriseRouter);
+app.use('/api/push', requireAuth, pushRouter);
 
 // En production, le build du frontend (frontend/dist) est servi directement
 // par ce meme serveur: un seul service a heberger, meme origine que l'API
@@ -88,3 +90,5 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`API pointeuse demarree sur http://localhost:${PORT}`);
 });
+
+require('./scheduler').demarrer();

@@ -1,4 +1,5 @@
 import { dateLocale } from './dateUtils';
+import { api } from './api';
 
 const CLE_PREFIX = 'pointeuse_notif_';
 
@@ -41,4 +42,44 @@ export async function envoyerNotificationUneFois(cle, titre, options) {
   }
   new Notification(titre, options);
   localStorage.setItem(cleStockage, aujourdhui);
+}
+
+export function pushSupporte() {
+  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
+}
+
+// Le navigateur attend la cle VAPID encodee en base64url; PushManager.subscribe
+// veut un Uint8Array.
+function urlBase64ToUint8Array(base64) {
+  const padding = '='.repeat((4 - (base64.length % 4)) % 4);
+  const base64Standard = (base64 + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const brut = window.atob(base64Standard);
+  return Uint8Array.from([...brut].map((c) => c.charCodeAt(0)));
+}
+
+// Abonne cet appareil aux notifications push et enregistre l'abonnement cote
+// serveur pour l'employe donne. A appeler apres que l'utilisateur a autorise
+// les notifications (les rappels arriveront ensuite meme app fermee).
+export async function abonnerAuxPush(employeeId) {
+  if (!pushSupporte() || Notification.permission !== 'granted') return null;
+  const registration = await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    const { cle_publique } = await api.getClePubliquePush();
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(cle_publique),
+    });
+  }
+  await api.enregistrerAbonnementPush(subscription, employeeId);
+  return subscription;
+}
+
+export async function desabonnerDesPush() {
+  if (!pushSupporte()) return;
+  const registration = await navigator.serviceWorker.ready;
+  const subscription = await registration.pushManager.getSubscription();
+  if (!subscription) return;
+  await api.supprimerAbonnementPush(subscription.endpoint);
+  await subscription.unsubscribe();
 }
