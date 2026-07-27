@@ -21,6 +21,18 @@ export default function Parametres() {
   const [messageEntreprise, setMessageEntreprise] = useState('');
   const [erreurEntreprise, setErreurEntreprise] = useState('');
 
+  const [ongletActif, setOngletActif] = useState('societe');
+  const ONGLETS = [
+    { id: 'societe', label: t('parametres.ongletSociete') },
+    { id: 'regles', label: t('parametres.ongletRegles') },
+    { id: 'retards', label: t('parametres.ongletRetards') },
+    { id: 'notifications', label: t('parametres.ongletNotifications') },
+    { id: 'avertissements', label: t('parametres.ongletAvertissements') },
+    { id: 'ip', label: t('parametres.ongletIp') },
+    { id: 'bareme', label: t('parametres.ongletBareme') },
+    { id: 'feries', label: t('parametres.ongletFeries') },
+  ];
+
   function redimensionnerImage(fichier, tailleMax) {
     return new Promise((resolve, reject) => {
       const lecteur = new FileReader();
@@ -185,6 +197,21 @@ export default function Parametres() {
       {erreur && <p className="erreur">{erreur}</p>}
       {message && <p className="confirmation">{message}</p>}
 
+      <nav className="tabs">
+        {ONGLETS.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            className={`tab ${ongletActif === o.id ? 'active' : ''}`}
+            onClick={() => setOngletActif(o.id)}
+          >
+            {o.label}
+          </button>
+        ))}
+      </nav>
+
+      {ongletActif === 'societe' && (
+      <>
       <h3>{t('parametres.infosSocieteTitre')}</h3>
       <p className="aide">{t('parametres.infosSocieteAide')}</p>
       {erreurEntreprise && <p className="erreur">{erreurEntreprise}</p>}
@@ -236,7 +263,11 @@ export default function Parametres() {
         </div>
         <button type="submit">{t('parametres.enregistrerSociete')}</button>
       </form>
+      </>
+      )}
 
+      {ongletActif === 'regles' && (
+      <>
       <h3>{t('parametres.reglesCalculTitre')}</h3>
       <form className="form-parametres" onSubmit={enregistrerParametres}>
         {CHAMPS_PARAMETRES.map((champ) => (
@@ -253,7 +284,11 @@ export default function Parametres() {
         ))}
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
+      </>
+      )}
 
+      {ongletActif === 'retards' && (
+      <>
       <h3>{t('parametres.retardsTitre')}</h3>
       <p className="aide">{t('parametres.retardsAide')}</p>
       <form className="form-parametres" onSubmit={enregistrerParametres}>
@@ -303,7 +338,11 @@ export default function Parametres() {
         </label>
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
+      </>
+      )}
 
+      {ongletActif === 'notifications' && (
+      <>
       <h3>{t('parametres.notifAutoTitre')}</h3>
       <p className="aide">{t('parametres.notifAutoAide')}</p>
       <form className="form-parametres" onSubmit={enregistrerParametres}>
@@ -384,7 +423,11 @@ export default function Parametres() {
         </label>
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
+      </>
+      )}
 
+      {ongletActif === 'avertissements' && (
+      <>
       <h3>{t('parametres.avertissementsRetardsTitre')}</h3>
       <p className="aide">{t('parametres.avertissementsRetardsAide')}</p>
       <form className="form-parametres" onSubmit={enregistrerParametres}>
@@ -447,7 +490,11 @@ export default function Parametres() {
           )}
         </tbody>
       </table>
+      </>
+      )}
 
+      {ongletActif === 'ip' && (
+      <>
       <h3>{t('parametres.restrictionIpTitre')}</h3>
       <p className="aide">{t('parametres.restrictionIpAide')}</p>
       <form className="form-inline" onSubmit={enregistrerParametres}>
@@ -458,7 +505,11 @@ export default function Parametres() {
         />
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
+      </>
+      )}
 
+      {ongletActif === 'bareme' && (
+      <>
       <h3>{t('parametres.baremeTitre')}</h3>
       <p className="aide">{t('parametres.baremeAide')}</p>
       <form onSubmit={enregistrerBareme}>
@@ -506,7 +557,11 @@ export default function Parametres() {
           <button type="submit">{t('parametres.enregistrerBareme')}</button>
         </div>
       </form>
+      </>
+      )}
 
+      {ongletActif === 'feries' && (
+      <>
       <h3>{t('parametres.feriesTitre')}</h3>
       <div className="form-inline">
         <label>
@@ -559,6 +614,8 @@ export default function Parametres() {
           )}
         </tbody>
       </table>
+      </>
+      )}
     </div>
   );
 }
