@@ -9,7 +9,7 @@ import { exporterCSV, exporterPDF } from '../export';
 export default function Rapport() {
   const { formatMontant } = useDevise();
   const { entreprise } = useEntreprise();
-  const { t } = useLangue();
+  const { t, direction } = useLangue();
   const [mois, setMois] = useState(moisCourant());
   const [rapport, setRapport] = useState([]);
   const [erreur, setErreur] = useState('');
@@ -82,7 +82,11 @@ export default function Rapport() {
       ...lignesExport(),
       [t('rapport.total'), '', '', `${totalHeures.toFixed(2)} h`, '', '', '', '', '', '', '', '', '', '', '', formatMontant(totalGeneral)],
     ];
-    exporterPDF(`rapport_paie_${mois}`, t('rapport.pdfTitre', { mois }), entetesExport, lignes, { fontSize: 6, entreprise });
+    exporterPDF(`rapport_paie_${mois}`, t('rapport.pdfTitre', { mois }), entetesExport, lignes, {
+      fontSize: 6,
+      entreprise,
+      rtl: direction === 'rtl',
+    });
   };
 
   return (

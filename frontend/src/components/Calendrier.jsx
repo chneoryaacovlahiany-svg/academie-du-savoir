@@ -53,7 +53,7 @@ function listeDatesEntre(debut, fin) {
 export default function Calendrier() {
   const { user } = useAuth();
   const { entreprise } = useEntreprise();
-  const { t, locale } = useLangue();
+  const { t, locale, direction } = useLangue();
   const estAdmin = user.role === 'admin';
   const [employees, setEmployees] = useState([]);
   const [employeeId, setEmployeeId] = useState('');
@@ -303,7 +303,7 @@ export default function Calendrier() {
     const titre = employeSelectionne
       ? `${t('calendrier.title')} - ${employeSelectionne.prenom} ${employeSelectionne.nom} - ${mois}`
       : `${t('calendrier.title')} - ${mois}`;
-    exporterPDF(nomFichierBase, titre, entetesExport, lignes, { entreprise });
+    exporterPDF(nomFichierBase, titre, entetesExport, lignes, { entreprise, rtl: direction === 'rtl' });
   };
 
   return (
