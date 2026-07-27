@@ -14,6 +14,7 @@ const CLES_CONNUES = [
   'accumulation_maladie_mois',
   'retards_tolerance_minutes',
   'retards_plafond_mensuel_minutes',
+  'notif_entree_avant_minutes',
   'notif_entree_nb_rappels',
   'notif_entree_intervalle_minutes',
   'notif_sortie_nb_rappels',

@@ -18,12 +18,23 @@ async function envoyerPush(sub, payload) {
   }
 }
 
-// Verifie, pour un employe et un type de rappel ("entree" ou "sortie") donnes,
-// si le moment est venu d'envoyer un nouveau rappel: pas encore atteint le
-// nombre max, et l'heure du prochain envoi (calculee a l'heure prevue puis
-// decalee par l'intervalle configure, ou reportee via un bouton "+X min" sur
-// la notification precedente) est passee.
-async function verifierEtEnvoyerRappel(emp, subs, date, type, heurePrevueStr, nbMax, intervalleMinutes, maintenant, optionsReport) {
+// Soustrait des minutes a une heure "HH:MM". Se bloque a 00:00 (sans passer a
+// la veille) si le resultat serait negatif: cas limite tres improbable en
+// pratique (planning commencant a moins de "avant_minutes" apres minuit).
+function soustraireMinutes(heureStr, minutes) {
+  const [h, m] = heureStr.split(':').map(Number);
+  const total = Math.max(0, h * 60 + m - minutes);
+  const hh = String(Math.floor(total / 60)).padStart(2, '0');
+  const mm = String(total % 60).padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+// Verifie, pour un employe et un type de rappel donne ("entree_avant",
+// "entree" ou "sortie"), si le moment est venu d'envoyer un nouveau rappel:
+// pas encore atteint le nombre max, et l'heure du prochain envoi (calculee a
+// l'heure prevue puis decalee par l'intervalle configure, ou reportee via un
+// bouton "+X min" sur la notification precedente) est passee.
+async function verifierEtEnvoyerRappel(emp, subs, date, type, heurePrevueStr, nbMax, intervalleMinutes, maintenant, corps, optionsReport) {
   if (!heurePrevueStr || !nbMax || nbMax <= 0) return;
   const heurePrevue = new Date(`${date}T${heurePrevueStr}:00`);
 
@@ -51,10 +62,7 @@ async function verifierEtEnvoyerRappel(emp, subs, date, type, heurePrevueStr, nb
 
   const payload = JSON.stringify({
     titre: 'Pointeuse',
-    corps:
-      type === 'entree'
-        ? "N'oubliez pas de pointer votre entree."
-        : "N'oubliez pas de pointer votre sortie. Vous pouvez reporter le rappel si vous faites des heures de rattrapage.",
+    corps,
     tag: `${type}-${emp.id}-${date}`,
     type,
     employeeId: emp.id,
@@ -95,6 +103,23 @@ async function verifierRappels() {
     const termine = pointage && pointage.heure_entree && pointage.heure_sortie;
 
     if (!pointe && !termine) {
+      // Rappel preventif avant l'heure de debut prevue (en plus de celui qui
+      // part pile a l'heure): un seul envoi, suivi independamment de la
+      // sequence de rappels qui suit une fois l'heure prevue atteinte.
+      if (params.notif_entree_avant_minutes > 0) {
+        const heureAvant = soustraireMinutes(horaireJour.heure_debut, params.notif_entree_avant_minutes);
+        await verifierEtEnvoyerRappel(
+          emp,
+          subs,
+          date,
+          'entree_avant',
+          heureAvant,
+          1,
+          0,
+          maintenant,
+          `Votre journee de travail commence a ${horaireJour.heure_debut}, n'oubliez pas de pointer votre entree.`
+        );
+      }
       await verifierEtEnvoyerRappel(
         emp,
         subs,
@@ -103,7 +128,8 @@ async function verifierRappels() {
         horaireJour.heure_debut,
         params.notif_entree_nb_rappels,
         params.notif_entree_intervalle_minutes,
-        maintenant
+        maintenant,
+        "N'oubliez pas de pointer votre entree."
       );
     } else if (pointe) {
       await verifierEtEnvoyerRappel(
@@ -115,6 +141,7 @@ async function verifierRappels() {
         params.notif_sortie_nb_rappels,
         params.notif_sortie_intervalle_minutes,
         maintenant,
+        "N'oubliez pas de pointer votre sortie. Vous pouvez reporter le rappel si vous faites des heures de rattrapage.",
         params.notif_sortie_options_report
       );
     }

@@ -314,6 +314,16 @@ export default function Parametres() {
           {t('parametres.notifAutoActifLabel')}
         </label>
         <label className="champ-parametre">
+          {t('parametres.notifEntreeAvantLabel')}
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={parametres.notif_entree_avant_minutes}
+            onChange={(e) => handleParametreChange('notif_entree_avant_minutes', e.target.value)}
+          />
+        </label>
+        <label className="champ-parametre">
           {t('parametres.notifEntreeNbRappelsLabel')}
           <input
             type="number"
