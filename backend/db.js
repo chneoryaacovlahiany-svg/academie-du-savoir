@@ -109,6 +109,13 @@ db.exec(`
     prochain_envoi TEXT,
     PRIMARY KEY (employee_id, date, type)
   );
+
+  CREATE TABLE IF NOT EXISTS avertissements_etat (
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    mois TEXT NOT NULL,
+    niveau_envoye INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (employee_id, mois)
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);
@@ -165,6 +172,8 @@ const parametresDefaut = {
   notif_sortie_nb_rappels: '3',
   notif_sortie_intervalle_minutes: '15',
   notif_sortie_options_report: '20,30,40',
+  avertissements_retards_actif: '0',
+  avertissements_retards_seuil: '3',
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {

@@ -383,6 +383,30 @@ export default function Parametres() {
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
 
+      <h3>{t('parametres.avertissementsRetardsTitre')}</h3>
+      <p className="aide">{t('parametres.avertissementsRetardsAide')}</p>
+      <form className="form-parametres" onSubmit={enregistrerParametres}>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.avertissements_retards_actif}
+            onChange={(e) => handleParametreCaseChange('avertissements_retards_actif', e.target.checked)}
+          />
+          {t('parametres.avertissementsRetardsActifLabel')}
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.avertissementsRetardsSeuilLabel')}
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={parametres.avertissements_retards_seuil}
+            onChange={(e) => handleParametreChange('avertissements_retards_seuil', e.target.value)}
+          />
+        </label>
+        <button type="submit">{t('parametres.enregistrerParametres')}</button>
+      </form>
+
       <h3>{t('parametres.restrictionIpTitre')}</h3>
       <p className="aide">{t('parametres.restrictionIpAide')}</p>
       <form className="form-inline" onSubmit={enregistrerParametres}>

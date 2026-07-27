@@ -19,6 +19,7 @@ const CLES_CONNUES = [
   'notif_entree_intervalle_minutes',
   'notif_sortie_nb_rappels',
   'notif_sortie_intervalle_minutes',
+  'avertissements_retards_seuil',
 ];
 
 const CLES_BOOLEENNES = [
@@ -27,6 +28,7 @@ const CLES_BOOLEENNES = [
   'retards_rattrapage_actif',
   'notif_auto_actif',
   'notif_entree_avant_actif',
+  'avertissements_retards_actif',
 ];
 
 // Une ou plusieurs IP separees par des virgules (ex: "88.12.34.56, 88.12.34.57").

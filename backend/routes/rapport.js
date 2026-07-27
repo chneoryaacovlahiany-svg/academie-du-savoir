@@ -11,6 +11,7 @@ const {
   pauseAppliqueePourJour,
 } = require('../calculs');
 const { chargerParametres, soldeCongesPayes, soldeMaladie } = require('../soldes');
+const { calculerJoursManquants } = require('../retards');
 
 const router = express.Router();
 
@@ -112,63 +113,10 @@ router.get('/', (req, res) => {
     const heuresPresence = pointages.reduce((acc, p) => acc + (p.heures_travaillees || 0), 0);
 
     // Ecart entre heures prevues (plage horaire, pause deduite) et heures
-    // reellement payees, jour par jour. Ne concerne que les jours ou l'employe
-    // a pointe (une absence totale sans pointage n'est pas comptee ici: c'est
-    // un cas separe, a gerer via une demande de conge/absence si necessaire),
-    // et exclut les jours de conge/maladie approuves et les jours feries.
-    // Calcule pour tous les types de paie (utile pour le reperer dans le
-    // Calendrier); seul le salaire fixe le deduit reellement du montant.
-    //
-    // Si le suivi des retards/departs anticipes est actif (Parametres), une
-    // tolerance (en minutes) est appliquee jour par jour: en-dessous, l'ecart
-    // ne compte pas; au-dessus, il compte en entier (pas seulement le
-    // depassement). Le rattrapage, si actif, calcule l'ecart en compensant
-    // retard et depart anticipe au sein de la meme journee (equivalent a
-    // considerer l'employe comme ayant droit aux heures sup pour ce calcul
-    // uniquement, quel que soit son reglage individuel). Un plafond mensuel
-    // cumule peut aussi faire sauter la tolerance pour tout le mois.
-    const retardsActif = !!params.retards_actif;
-    const rattrapageActif = !!params.retards_rattrapage_actif;
-    const toleranceMinutes = params.retards_tolerance_minutes || 0;
-    const plafondMensuelActif = !!params.retards_plafond_mensuel_actif;
-    const plafondMensuelMinutes = params.retards_plafond_mensuel_minutes || 0;
-
-    const ecartsBrutsParDate = {};
-    if (horaires.length > 0) {
-      for (const p of pointages) {
-        if (p.heures_travaillees == null) continue;
-        const horaireJour = horaireParJour[jourSemaineLundi0(p.date)];
-        if (!horaireJour || !horaireJour.actif) continue;
-        if (joursFeriesDates.has(p.date)) continue;
-        if (conges.some((c) => c.date_debut <= p.date && c.date_fin >= p.date)) continue;
-
-        const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes, horaireJour.pause_appliquee);
-        if (heuresPrevues <= 0) continue;
-        const heuresEffectivesPourEcart = retardsActif
-          ? heuresEffectivesJour(p, horaireJour, rattrapageActif, pauseMinutes)
-          : heuresEffectivesParDate[p.date];
-        const ecart = Math.max(0, heuresPrevues - heuresEffectivesPourEcart);
-        if (ecart > 0.001) {
-          ecartsBrutsParDate[p.date] = { heuresPrevues, ecart };
-        }
-      }
-    }
-
-    const totalBrutMinutes = Object.values(ecartsBrutsParDate).reduce((acc, j) => acc + j.ecart * 60, 0);
-    const plafondMensuelDepasse = retardsActif && plafondMensuelActif && totalBrutMinutes > plafondMensuelMinutes;
-
-    const joursManquants = [];
-    for (const [date, { heuresPrevues, ecart }] of Object.entries(ecartsBrutsParDate)) {
-      const compte = !retardsActif || plafondMensuelDepasse || ecart * 60 > toleranceMinutes;
-      if (!compte) continue;
-      joursManquants.push({
-        date,
-        heures_prevues: Math.round(heuresPrevues * 100) / 100,
-        heures_effectives: Math.round((heuresPrevues - ecart) * 100) / 100,
-        ecart: Math.round(ecart * 100) / 100,
-      });
-    }
-    joursManquants.sort((a, b) => (a.date < b.date ? -1 : 1));
+    // reellement payees, jour par jour (tolerance/rattrapage/plafond mensuel
+    // configures dans Parametres). Calcul partage avec les avertissements
+    // automatiques (backend/retards.js), pour ne jamais desynchroniser les deux.
+    const { joursManquants, plafondMensuelDepasse } = calculerJoursManquants(emp.id, debut, fin);
     const heuresManquantesTotal = joursManquants.reduce((acc, j) => acc + j.ecart, 0);
     const montantDeduction = estMensuel ? heuresManquantesTotal * emp.taux_horaire : 0;
     const heuresManquantes = estMensuel ? heuresManquantesTotal : 0;

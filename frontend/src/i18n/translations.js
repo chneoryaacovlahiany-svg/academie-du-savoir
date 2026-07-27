@@ -309,6 +309,10 @@ export const TRADUCTIONS = {
       notifSortieNbRappelsLabel: 'Nombre de rappels pour pointer la sortie',
       notifSortieIntervalleLabel: 'Intervalle entre deux rappels de sortie (minutes)',
       notifSortieOptionsReportLabel: 'Options de report proposees sur le rappel de sortie ("je fais des heures de rattrapage"), en minutes separees par des virgules',
+      avertissementsRetardsTitre: 'Avertissements automatiques pour retards',
+      avertissementsRetardsAide: "Envoie a l'employe, par notification, une serie d'avertissements au fur et a mesure que ses retards/departs anticipes s'accumulent dans le mois (meme comptage que le Rapport & Paie). Le ton monte progressivement, jusqu'a 5 avertissements par mois, du plus mesure au plus severe.",
+      avertissementsRetardsActifLabel: 'Activer les avertissements automatiques',
+      avertissementsRetardsSeuilLabel: 'Nombre de retards/departs anticipes entre chaque avertissement',
     },
     comptes: {
       title: 'Comptes',
@@ -649,6 +653,10 @@ export const TRADUCTIONS = {
       notifSortieNbRappelsLabel: 'Number of reminders to clock out',
       notifSortieIntervalleLabel: 'Interval between two clock-out reminders (minutes)',
       notifSortieOptionsReportLabel: 'Snooze options offered on the clock-out reminder ("I\'m doing catch-up hours"), in minutes separated by commas',
+      avertissementsRetardsTitre: 'Automatic warnings for lateness',
+      avertissementsRetardsAide: "Sends the employee a series of notifications as their late arrivals/early departures accumulate over the month (same count as the Report & Payroll). The tone escalates progressively, up to 5 warnings per month, from measured to severe.",
+      avertissementsRetardsActifLabel: 'Enable automatic warnings',
+      avertissementsRetardsSeuilLabel: 'Number of late arrivals/early departures between each warning',
     },
     comptes: {
       title: 'Accounts',
@@ -989,6 +997,10 @@ export const TRADUCTIONS = {
       notifSortieNbRappelsLabel: 'מספר תזכורות להחתמת יציאה',
       notifSortieIntervalleLabel: 'מרווח בין שתי תזכורות יציאה (דקות)',
       notifSortieOptionsReportLabel: 'אפשרויות דחייה המוצעות בתזכורת היציאה ("אני עושה שעות השלמה"), בדקות מופרדות בפסיקים',
+      avertissementsRetardsTitre: 'התראות אוטומטיות על איחורים',
+      avertissementsRetardsAide: 'שולח לעובד סדרת התראות ככל שהאיחורים/היציאות המוקדמות שלו מצטברים במהלך החודש (אותה ספירה כמו בדוח ושכר). הטון מחמיר בהדרגה, עד 5 התראות בחודש, ממתון עד חמור.',
+      avertissementsRetardsActifLabel: 'הפעל התראות אוטומטיות',
+      avertissementsRetardsSeuilLabel: 'מספר איחורים/יציאות מוקדמות בין כל התראה',
     },
     comptes: {
       title: 'חשבונות',

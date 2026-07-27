@@ -2,8 +2,21 @@ const db = require('./db');
 const { webpush } = require('./vapid');
 const { dateLocale, jourSemaineLundi0 } = require('./calculs');
 const { chargerParametres } = require('./soldes');
+const { calculerJoursManquants } = require('./retards');
 
 const INTERVALLE_VERIFICATION_MS = 60000;
+
+// Messages des 5 niveaux d'avertissement pour retards/departs anticipes
+// repetes, du plus mesure au plus severe: le ton monte pour exprimer les
+// enjeux, le mecontentement et le risque encouru (jusqu'a evoquer une
+// sanction disciplinaire au dernier niveau).
+const MESSAGES_AVERTISSEMENT_RETARDS = [
+  "Nous avons remarque plusieurs retards ou departs anticipes ce mois-ci. Merci d'etre attentif a votre ponctualite.",
+  'Vos retards ou departs anticipes se repetent ce mois-ci. Nous vous demandons de veiller a respecter vos horaires.',
+  'Le nombre de retards ou departs anticipes ce mois-ci devient preoccupant. Merci de corriger rapidement la situation.',
+  'Vos retards ou departs anticipes repetes posent un probleme serieux. Si la situation ne s\'ameliore pas, des mesures pourront etre prises.',
+  "Dernier avertissement: vos retards ou departs anticipes repetes constituent un manquement grave a vos obligations. Sans amelioration immediate, des sanctions disciplinaires, pouvant aller jusqu'a la rupture du contrat, pourront etre engagees.",
+];
 
 async function envoyerPush(sub, payload) {
   try {
@@ -148,10 +161,72 @@ async function verifierRappels() {
   }
 }
 
+// Verifie, pour chaque employe actif, si le nombre de retards/departs
+// anticipes comptes ce mois-ci (meme calcul que le Rapport & Paie) a franchi
+// un nouveau palier (seuil, 2x seuil, 3x seuil...), jusqu'a 5 paliers. Un seul
+// avertissement est envoye par palier franchi et par mois (le compteur est
+// remis a zero chaque mois via la cle "mois" de l'etat); si plusieurs paliers
+// sont franchis d'un coup entre deux verifications, seul le palier le plus
+// eleve est envoye (les precedents n'ont plus de sens a signaler separement).
+async function calculerEtEnvoyerAvertissements() {
+  const params = chargerParametres();
+  if (!params.avertissements_retards_actif) return;
+  const seuil = Number(params.avertissements_retards_seuil);
+  if (!seuil || seuil <= 0) return;
+
+  const maintenant = new Date();
+  const mois = dateLocale(maintenant).slice(0, 7);
+  const [annee, m] = mois.split('-').map(Number);
+  const debut = `${mois}-01`;
+  const fin = `${mois}-${String(new Date(annee, m, 0).getDate()).padStart(2, '0')}`;
+
+  const employees = db.prepare('SELECT * FROM employees WHERE actif = 1').all();
+  for (const emp of employees) {
+    const subs = db.prepare('SELECT * FROM push_subscriptions WHERE employee_id = ?').all(emp.id);
+    if (subs.length === 0) continue;
+
+    const { joursManquants } = calculerJoursManquants(emp.id, debut, fin);
+    const niveauAtteint = Math.min(MESSAGES_AVERTISSEMENT_RETARDS.length, Math.floor(joursManquants.length / seuil));
+    if (niveauAtteint <= 0) continue;
+
+    const etat = db.prepare('SELECT * FROM avertissements_etat WHERE employee_id = ? AND mois = ?').get(emp.id, mois);
+    const niveauDejaEnvoye = etat ? etat.niveau_envoye : 0;
+    if (niveauAtteint <= niveauDejaEnvoye) continue;
+
+    const payload = JSON.stringify({
+      titre: 'Pointeuse',
+      corps: MESSAGES_AVERTISSEMENT_RETARDS[niveauAtteint - 1],
+      tag: `avertissement_retard-${emp.id}-${mois}`,
+      type: 'avertissement_retard',
+      employeeId: emp.id,
+    });
+    for (const sub of subs) {
+      await envoyerPush(sub, payload);
+    }
+
+    db.prepare(
+      `INSERT INTO avertissements_etat (employee_id, mois, niveau_envoye) VALUES (?, ?, ?)
+       ON CONFLICT(employee_id, mois) DO UPDATE SET niveau_envoye = excluded.niveau_envoye`
+    ).run(emp.id, mois, niveauAtteint);
+  }
+}
+
+// Calcul relativement couteux (recalcule tout le rapport du mois par employe):
+// pas besoin d'une precision a la minute comme pour les rappels de pointage,
+// une verification par jour suffit largement.
+let derniereDateAvertissements = null;
+async function verifierAvertissementsRetards() {
+  const date = dateLocale();
+  if (derniereDateAvertissements === date) return;
+  derniereDateAvertissements = date;
+  await calculerEtEnvoyerAvertissements();
+}
+
 function demarrer() {
   setInterval(() => {
     verifierRappels().catch((err) => console.error('Erreur verification des rappels:', err));
+    verifierAvertissementsRetards().catch((err) => console.error('Erreur verification des avertissements:', err));
   }, INTERVALLE_VERIFICATION_MS);
 }
 
-module.exports = { demarrer, verifierRappels };
+module.exports = { demarrer, verifierRappels, verifierAvertissementsRetards, calculerEtEnvoyerAvertissements };
