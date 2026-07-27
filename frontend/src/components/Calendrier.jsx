@@ -3,9 +3,8 @@ import { api } from '../api';
 import { dateLocale, moisLocal } from '../dateUtils';
 import { useAuth } from '../AuthContext.jsx';
 import { useEntreprise } from '../EntrepriseContext.jsx';
+import { useLangue } from '../LangueContext.jsx';
 import { exporterCSV, exporterPDF } from '../export';
-
-const JOURS_SEMAINE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
 function formatDuree(heures) {
   if (heures == null) return '-';
@@ -18,12 +17,6 @@ function isoToTimeInput(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-}
-
-function labelLieu(lieu) {
-  if (lieu === 'bureau') return 'Bureau';
-  if (lieu === 'domicile') return 'Domicile';
-  return '-';
 }
 
 function timeInputToIso(dateStr, timeStr) {
@@ -60,6 +53,7 @@ function listeDatesEntre(debut, fin) {
 export default function Calendrier() {
   const { user } = useAuth();
   const { entreprise } = useEntreprise();
+  const { t, locale } = useLangue();
   const estAdmin = user.role === 'admin';
   const [employees, setEmployees] = useState([]);
   const [employeeId, setEmployeeId] = useState('');
@@ -82,6 +76,12 @@ export default function Calendrier() {
   const [formMultipleSortie, setFormMultipleSortie] = useState('');
   const [formMultipleLieu, setFormMultipleLieu] = useState('bureau');
   const [messageMultiple, setMessageMultiple] = useState('');
+
+  const labelLieu = (lieu) => {
+    if (lieu === 'bureau') return t('common.bureau');
+    if (lieu === 'domicile') return t('common.domicile');
+    return '-';
+  };
 
   useEffect(() => {
     api.getEmployees().then((emps) => {
@@ -146,7 +146,7 @@ export default function Calendrier() {
   const supprimerJour = async () => {
     const p = pointagesMois[dateSelectionnee];
     if (!p) return;
-    if (!confirm('Supprimer le pointage de ce jour ?')) return;
+    if (!confirm(t('calendrier.confirmSupprimerJour'))) return;
     await api.deletePointage(p.id);
     setDateSelectionnee(null);
     chargerCalendrier();
@@ -158,11 +158,11 @@ export default function Calendrier() {
     setMessagePlage('');
     setErreur('');
     if (!plage.date_debut || !plage.date_fin) {
-      setErreur('Indiquez une date de debut et une date de fin');
+      setErreur(t('calendrier.erreurDates'));
       return;
     }
     if (plage.date_fin < plage.date_debut) {
-      setErreur('La date de fin doit etre apres la date de debut');
+      setErreur(t('calendrier.erreurOrdreDates'));
       return;
     }
     try {
@@ -176,7 +176,7 @@ export default function Calendrier() {
           lieu: plage.lieu,
         });
       }
-      setMessagePlage(`${dates.length} jour(s) mis a jour (${plage.date_debut} au ${plage.date_fin}).`);
+      setMessagePlage(t('calendrier.joursMisAJour', { n: dates.length, debut: plage.date_debut, fin: plage.date_fin }));
       chargerCalendrier();
       chargerResume();
     } catch (err) {
@@ -201,7 +201,7 @@ export default function Calendrier() {
     setMessageMultiple('');
     setErreur('');
     if (joursSelectionnes.length === 0) {
-      setErreur('Selectionnez au moins un jour');
+      setErreur(t('calendrier.erreurSelectionJour'));
       return;
     }
     try {
@@ -214,7 +214,7 @@ export default function Calendrier() {
           lieu: formMultipleLieu,
         });
       }
-      setMessageMultiple(`${joursSelectionnes.length} jour(s) modifie(s).`);
+      setMessageMultiple(t('calendrier.joursModifies', { n: joursSelectionnes.length }));
       setJoursSelectionnes([]);
       chargerCalendrier();
       chargerResume();
@@ -228,15 +228,15 @@ export default function Calendrier() {
     setErreur('');
     const joursAvecPointage = joursSelectionnes.filter((date) => pointagesMois[date]);
     if (joursAvecPointage.length === 0) {
-      setErreur('Aucun des jours selectionnes n\'a de pointage a supprimer');
+      setErreur(t('calendrier.erreurAucunPointageASupprimer'));
       return;
     }
-    if (!confirm(`Supprimer le pointage de ${joursAvecPointage.length} jour(s) ?`)) return;
+    if (!confirm(t('calendrier.confirmSupprimerJours', { n: joursAvecPointage.length }))) return;
     try {
       for (const date of joursAvecPointage) {
         await api.deletePointage(pointagesMois[date].id);
       }
-      setMessageMultiple(`${joursAvecPointage.length} jour(s) supprime(s).`);
+      setMessageMultiple(t('calendrier.joursSupprimes', { n: joursAvecPointage.length }));
       setJoursSelectionnes([]);
       chargerCalendrier();
       chargerResume();
@@ -266,11 +266,20 @@ export default function Calendrier() {
     ? `calendrier_${employeSelectionne.prenom}_${employeSelectionne.nom}_${mois}`.replace(/\s+/g, '_')
     : `calendrier_${mois}`;
 
-  const entetesExport = ['Date', 'Jour', 'Entree', 'Sortie', 'Lieu', 'Pause', 'Total', 'Total presence'];
+  const entetesExport = [
+    t('calendrier.colDate'),
+    t('calendrier.colJour'),
+    t('calendrier.colEntree'),
+    t('calendrier.colSortie'),
+    t('calendrier.colLieu'),
+    t('calendrier.colPause'),
+    t('calendrier.colTotal'),
+    t('calendrier.colTotalPresence'),
+  ];
   const lignesExport = () =>
     joursDuMoisTries.map((dateStr) => {
       const p = pointagesMois[dateStr];
-      const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' });
+      const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString(locale, { weekday: 'long' });
       const manquant = joursManquantsParDate[dateStr];
       return [
         dateStr,
@@ -278,32 +287,32 @@ export default function Calendrier() {
         p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-',
         p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-',
         p ? labelLieu(p.lieu) : '-',
-        p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} min` : '-',
+        p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} ${t('common.minAbrev')}` : '-',
         formatDuree(heuresEffectivesParDate[dateStr]) + (manquant ? ` (-${formatDuree(manquant.ecart)})` : ''),
         p?.heures_travaillees != null ? formatDuree(p.heures_travaillees) : '-',
       ];
     });
 
   const exporterTableauCSV = () => {
-    const lignes = [...lignesExport(), ['Total du mois', '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
+    const lignes = [...lignesExport(), [t('calendrier.totalDuMois'), '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
     exporterCSV(nomFichierBase, entetesExport, lignes, { entreprise });
   };
 
   const exporterTableauPDF = () => {
-    const lignes = [...lignesExport(), ['Total du mois', '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
+    const lignes = [...lignesExport(), [t('calendrier.totalDuMois'), '', '', '', '', '', formatDuree(totalColonneTotal), formatDuree(totalColonnePresence)]];
     const titre = employeSelectionne
-      ? `Calendrier - ${employeSelectionne.prenom} ${employeSelectionne.nom} - ${mois}`
-      : `Calendrier - ${mois}`;
+      ? `${t('calendrier.title')} - ${employeSelectionne.prenom} ${employeSelectionne.nom} - ${mois}`
+      : `${t('calendrier.title')} - ${mois}`;
     exporterPDF(nomFichierBase, titre, entetesExport, lignes, { entreprise });
   };
 
   return (
     <div className="panel">
-      <h2>Calendrier de pointage</h2>
+      <h2>{t('calendrier.title')}</h2>
 
       <div className="form-inline">
         <label>
-          Employe:{' '}
+          {t('calendrier.employeLabel')}{' '}
           <select value={employeeId} onChange={(e) => setEmployeeId(e.target.value)}>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
@@ -313,7 +322,7 @@ export default function Calendrier() {
           </select>
         </label>
         <label>
-          Mois:{' '}
+          {t('calendrier.moisLabel')}{' '}
           <input type="month" value={mois} onChange={(e) => setMois(e.target.value)} />
         </label>
         <div className="selecteur-vue">
@@ -322,14 +331,14 @@ export default function Calendrier() {
             className={vue === 'calendrier' ? 'vue-active' : 'secondary'}
             onClick={() => setVue('calendrier')}
           >
-            Calendrier
+            {t('calendrier.vueCalendrier')}
           </button>
           <button
             type="button"
             className={vue === 'tableau' ? 'vue-active' : 'secondary'}
             onClick={() => setVue('tableau')}
           >
-            Tableau
+            {t('calendrier.vueTableau')}
           </button>
         </div>
       </div>
@@ -338,19 +347,19 @@ export default function Calendrier() {
         <div className="cadrans cadrans-compacts">
           <div className="cadran">
             <div className="cadran-valeur">{resume.total_heures.toFixed(2)} h</div>
-            <div className="cadran-label">Total heures du mois realise</div>
+            <div className="cadran-label">{t('calendrier.totalRealise')}</div>
           </div>
           <div className="cadran">
             <div className="cadran-valeur">{(resume.heures_a_effectuer ?? 0).toFixed(2)} h</div>
-            <div className="cadran-label">Total heures du mois a effectuer</div>
+            <div className="cadran-label">{t('calendrier.totalAEffectuer')}</div>
           </div>
           <div className="cadran">
             <div className="cadran-valeur">{(resume.heures_presence ?? 0).toFixed(2)} h</div>
-            <div className="cadran-label">Total heures de presence du mois</div>
+            <div className="cadran-label">{t('calendrier.totalPresence')}</div>
           </div>
           <div className="cadran">
             <div className="cadran-valeur">{resume.heures_manquantes > 0 ? resume.heures_manquantes.toFixed(2) : '0'} h</div>
-            <div className="cadran-label">Heures manquantes</div>
+            <div className="cadran-label">{t('calendrier.heuresManquantes')}</div>
           </div>
         </div>
       )}
@@ -360,7 +369,7 @@ export default function Calendrier() {
       {vue === 'calendrier' ? (
         <div className="calendrier">
           <div className="calendrier-entetes">
-            {JOURS_SEMAINE.map((j) => (
+            {t('common.joursCourts').map((j) => (
               <div key={j} className="calendrier-entete">
                 {j}
               </div>
@@ -379,14 +388,14 @@ export default function Calendrier() {
                   className={`calendrier-jour ${p ? 'calendrier-jour-pointe' : ''} ${selectionne ? 'calendrier-jour-selectionne' : ''} ${manquant ? 'calendrier-jour-manquant' : ''}`}
                   onClick={estAdmin ? () => selectionnerJour(dateStr) : undefined}
                   type="button"
-                  title={manquant ? `Il manque ${formatDuree(manquant.ecart)} par rapport a la plage prevue` : undefined}
+                  title={manquant ? t('calendrier.manqueTitre', { duree: formatDuree(manquant.ecart) }) : undefined}
                 >
                   <span className="calendrier-jour-numero">{jour}</span>
                   <span className="calendrier-jour-detail">
                     {p?.heures_travaillees != null
                       ? formatDuree(heuresEffectivesParDate[dateStr])
                       : p
-                      ? 'incomplet'
+                      ? t('calendrier.incomplet')
                       : ''}
                   </span>
                   {p?.lieu && <span className="calendrier-jour-lieu">{labelLieu(p.lieu)}</span>}
@@ -400,10 +409,10 @@ export default function Calendrier() {
         <div className="table-scroll">
           <div className="form-inline">
             <button type="button" className="secondary" onClick={exporterTableauCSV}>
-              Exporter Excel
+              {t('calendrier.exporterExcel')}
             </button>
             <button type="button" className="secondary" onClick={exporterTableauPDF}>
-              Exporter PDF
+              {t('calendrier.exporterPDF')}
             </button>
           </div>
           <table>
@@ -418,21 +427,21 @@ export default function Calendrier() {
                     />
                   )}
                 </th>
-                <th>Date</th>
-                <th>Jour</th>
-                <th>Entree</th>
-                <th>Sortie</th>
-                <th>Lieu</th>
-                <th>Pause</th>
-                <th>Total</th>
-                <th>Total presence</th>
+                <th>{t('calendrier.colDate')}</th>
+                <th>{t('calendrier.colJour')}</th>
+                <th>{t('calendrier.colEntree')}</th>
+                <th>{t('calendrier.colSortie')}</th>
+                <th>{t('calendrier.colLieu')}</th>
+                <th>{t('calendrier.colPause')}</th>
+                <th>{t('calendrier.colTotal')}</th>
+                <th>{t('calendrier.colTotalPresence')}</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {joursDuMoisTries.map((dateStr) => {
                 const p = pointagesMois[dateStr];
-                const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' });
+                const nomJour = new Date(`${dateStr}T00:00:00`).toLocaleDateString(locale, { weekday: 'long' });
                 const manquant = joursManquantsParDate[dateStr];
                 const classesLigne = [
                   dateStr === dateSelectionnee ? 'ligne-selectionnee' : '',
@@ -454,14 +463,14 @@ export default function Calendrier() {
                     <td>{p?.heure_entree ? isoToTimeInput(p.heure_entree) : '-'}</td>
                     <td>{p?.heure_sortie ? isoToTimeInput(p.heure_sortie) : '-'}</td>
                     <td>{p ? labelLieu(p.lieu) : '-'}</td>
-                    <td>{p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} min` : '-'}</td>
+                    <td>{p?.heures_travaillees != null ? `${pauseAppliqueeParDate[dateStr] ?? 0} ${t('common.minAbrev')}` : '-'}</td>
                     <td>
                       {formatDuree(heuresEffectivesParDate[dateStr])}
                       {manquant && <span className="badge-manquant"> -{formatDuree(manquant.ecart)}</span>}
                     </td>
                     <td>{p?.heures_travaillees != null ? formatDuree(p.heures_travaillees) : '-'}</td>
                     <td className="actions">
-                      {estAdmin && <button onClick={() => selectionnerJour(dateStr)}>Modifier</button>}
+                      {estAdmin && <button onClick={() => selectionnerJour(dateStr)}>{t('calendrier.modifier')}</button>}
                     </td>
                   </tr>
                 );
@@ -469,7 +478,7 @@ export default function Calendrier() {
             </tbody>
             <tfoot>
               <tr className="ligne-total">
-                <td colSpan={7}>Total du mois</td>
+                <td colSpan={7}>{t('calendrier.totalDuMois')}</td>
                 <td>{formatDuree(totalColonneTotal)}</td>
                 <td colSpan={2}>{formatDuree(totalColonnePresence)}</td>
               </tr>
@@ -480,11 +489,11 @@ export default function Calendrier() {
 
       {estAdmin && vue === 'tableau' && joursSelectionnes.length > 0 && (
         <div className="panneau-edition-jour">
-          <h4>{joursSelectionnes.length} jour(s) selectionne(s)</h4>
+          <h4>{t('calendrier.joursSelectionnes', { n: joursSelectionnes.length })}</h4>
           {messageMultiple && <p className="confirmation">{messageMultiple}</p>}
           <form className="form-inline" onSubmit={appliquerAuxJoursSelectionnes}>
             <label>
-              Heure d'entree:{' '}
+              {t('calendrier.heureEntreeLabel')}{' '}
               <input
                 type="time"
                 value={formMultipleEntree}
@@ -493,7 +502,7 @@ export default function Calendrier() {
               />
             </label>
             <label>
-              Heure de sortie:{' '}
+              {t('calendrier.heureSortieLabel')}{' '}
               <input
                 type="time"
                 value={formMultipleSortie}
@@ -502,18 +511,18 @@ export default function Calendrier() {
               />
             </label>
             <label>
-              Lieu:{' '}
+              {t('calendrier.lieuLabel')}{' '}
               <select value={formMultipleLieu} onChange={(e) => setFormMultipleLieu(e.target.value)}>
-                <option value="bureau">Bureau</option>
-                <option value="domicile">Domicile</option>
+                <option value="bureau">{t('common.bureau')}</option>
+                <option value="domicile">{t('common.domicile')}</option>
               </select>
             </label>
-            <button type="submit">Appliquer aux jours selectionnes</button>
+            <button type="submit">{t('calendrier.appliquerSelection')}</button>
             <button type="button" className="danger" onClick={supprimerJoursSelectionnes}>
-              Supprimer les jours selectionnes
+              {t('calendrier.supprimerSelection')}
             </button>
             <button type="button" className="secondary" onClick={() => setJoursSelectionnes([])}>
-              Deselectionner tout
+              {t('calendrier.deselectionnerTout')}
             </button>
           </form>
         </div>
@@ -522,7 +531,7 @@ export default function Calendrier() {
       {estAdmin && dateSelectionnee && (
         <div className="panneau-edition-jour">
           <h4>
-            {new Date(`${dateSelectionnee}T00:00:00`).toLocaleDateString('fr-FR', {
+            {new Date(`${dateSelectionnee}T00:00:00`).toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
@@ -530,28 +539,28 @@ export default function Calendrier() {
           </h4>
           <div className="form-inline">
             <label>
-              Heure d'entree:{' '}
+              {t('calendrier.heureEntreeLabel')}{' '}
               <input type="time" value={formHeureEntree} onChange={(e) => setFormHeureEntree(e.target.value)} />
             </label>
             <label>
-              Heure de sortie:{' '}
+              {t('calendrier.heureSortieLabel')}{' '}
               <input type="time" value={formHeureSortie} onChange={(e) => setFormHeureSortie(e.target.value)} />
             </label>
             <label>
-              Lieu:{' '}
+              {t('calendrier.lieuLabel')}{' '}
               <select value={formLieu} onChange={(e) => setFormLieu(e.target.value)}>
-                <option value="bureau">Bureau</option>
-                <option value="domicile">Domicile</option>
+                <option value="bureau">{t('common.bureau')}</option>
+                <option value="domicile">{t('common.domicile')}</option>
               </select>
             </label>
-            <button onClick={enregistrerJour}>Enregistrer</button>
+            <button onClick={enregistrerJour}>{t('calendrier.enregistrer')}</button>
             {pointagesMois[dateSelectionnee] && (
               <button className="danger" onClick={supprimerJour}>
-                Supprimer
+                {t('calendrier.supprimer')}
               </button>
             )}
             <button className="secondary" onClick={() => setDateSelectionnee(null)}>
-              Fermer
+              {t('calendrier.fermer')}
             </button>
           </div>
         </div>
@@ -559,13 +568,11 @@ export default function Calendrier() {
 
       {estAdmin && (
         <>
-          <h3>Inserer une plage de dates</h3>
-          <p className="aide">
-            Applique les memes heures d'entree/sortie a chaque jour entre les deux dates (ex: du lundi au jeudi).
-          </p>
+          <h3>{t('calendrier.insererPlage')}</h3>
+          <p className="aide">{t('calendrier.insererPlageAide')}</p>
           <form className="form-inline" onSubmit={appliquerPlage}>
             <label>
-              Du:{' '}
+              {t('calendrier.du')}{' '}
               <input
                 type="date"
                 value={plage.date_debut}
@@ -574,7 +581,7 @@ export default function Calendrier() {
               />
             </label>
             <label>
-              Au:{' '}
+              {t('calendrier.au')}{' '}
               <input
                 type="date"
                 value={plage.date_fin}
@@ -583,7 +590,7 @@ export default function Calendrier() {
               />
             </label>
             <label>
-              Heure d'entree:{' '}
+              {t('calendrier.heureEntreeLabel')}{' '}
               <input
                 type="time"
                 value={plage.heure_entree}
@@ -592,7 +599,7 @@ export default function Calendrier() {
               />
             </label>
             <label>
-              Heure de sortie:{' '}
+              {t('calendrier.heureSortieLabel')}{' '}
               <input
                 type="time"
                 value={plage.heure_sortie}
@@ -601,13 +608,13 @@ export default function Calendrier() {
               />
             </label>
             <label>
-              Lieu:{' '}
+              {t('calendrier.lieuLabel')}{' '}
               <select value={plage.lieu} onChange={(e) => setPlage({ ...plage, lieu: e.target.value })}>
-                <option value="bureau">Bureau</option>
-                <option value="domicile">Domicile</option>
+                <option value="bureau">{t('common.bureau')}</option>
+                <option value="domicile">{t('common.domicile')}</option>
               </select>
             </label>
-            <button type="submit">Appliquer a la plage</button>
+            <button type="submit">{t('calendrier.appliquerPlage')}</button>
           </form>
           {messagePlage && <p className="confirmation">{messagePlage}</p>}
         </>

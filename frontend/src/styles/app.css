@@ -73,6 +73,19 @@ body {
   white-space: nowrap;
 }
 
+.selecteurs-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.selecteur-langue-login {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
 .taux-calcule {
   font-size: 13px;
   color: #16a34a;
@@ -264,7 +277,7 @@ table {
 
 th,
 td {
-  text-align: left;
+  text-align: start;
   padding: 10px;
   border-bottom: 1px solid #e5e7eb;
   font-size: 14px;
@@ -334,7 +347,7 @@ tbody tr:hover {
 
 .carte-employe {
   border: 1px solid #e5e7eb;
-  border-left: 4px solid #2563eb;
+  border-inline-start: 4px solid #2563eb;
   border-radius: 10px;
   padding: 16px;
   background: white;
@@ -436,7 +449,7 @@ button.sortie:hover {
 .cadran {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
-  border-left: 4px solid #93c5fd;
+  border-inline-start: 4px solid #93c5fd;
   border-radius: 10px;
   padding: 18px;
   text-align: center;
@@ -451,13 +464,13 @@ button.sortie:hover {
 .cadran-principal {
   background: #eff6ff;
   border-color: #bfdbfe;
-  border-left-color: #2563eb;
+  border-inline-start-color: #2563eb;
 }
 
 .cadran-alerte {
   background: #fef3c7;
   border-color: #fde68a;
-  border-left-color: #f59e0b;
+  border-inline-start-color: #f59e0b;
 }
 
 .cadran-alerte .cadran-valeur {
@@ -634,7 +647,7 @@ button.sortie:hover {
 .selecteur-vue {
   display: flex;
   gap: 6px;
-  margin-left: auto;
+  margin-inline-start: auto;
 }
 
 .selecteur-vue button {

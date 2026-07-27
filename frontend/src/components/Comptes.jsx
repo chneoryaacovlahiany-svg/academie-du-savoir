@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
+import { useLangue } from '../LangueContext.jsx';
 
 const COMPTE_VIDE = { email: '', password: '', role: 'employe', employee_id: '' };
 
 export default function Comptes() {
+  const { t } = useLangue();
   const [comptes, setComptes] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState(COMPTE_VIDE);
@@ -36,7 +38,7 @@ export default function Comptes() {
         employee_id: form.employee_id ? Number(form.employee_id) : null,
       });
       setForm(COMPTE_VIDE);
-      setMessage('Compte cree.');
+      setMessage(t('comptes.compteCree'));
       charger();
     } catch (err) {
       setErreur(err.message);
@@ -49,18 +51,15 @@ export default function Comptes() {
   };
 
   const supprimer = async (id) => {
-    if (!confirm('Supprimer ce compte ?')) return;
+    if (!confirm(t('comptes.confirmSupprimer'))) return;
     await api.deleteUser(id);
     charger();
   };
 
   return (
     <div className="panel">
-      <h2>Comptes</h2>
-      <p className="aide">
-        Cree un compte de connexion pour un employe (acces limite a ses propres donnees: pointage,
-        calendrier, conges) ou un autre administrateur (acces complet a l'application).
-      </p>
+      <h2>{t('comptes.title')}</h2>
+      <p className="aide">{t('comptes.aide')}</p>
 
       {erreur && <p className="erreur">{erreur}</p>}
       {message && <p className="confirmation">{message}</p>}
@@ -68,7 +67,7 @@ export default function Comptes() {
       <form className="form-inline" onSubmit={handleSubmit}>
         <input
           name="email"
-          placeholder="Identifiant (email)"
+          placeholder={t('comptes.identifiantPlaceholder')}
           value={form.email}
           onChange={handleChange}
           required
@@ -76,18 +75,18 @@ export default function Comptes() {
         <input
           name="password"
           type="password"
-          placeholder="Mot de passe"
+          placeholder={t('comptes.motDePassePlaceholder')}
           value={form.password}
           onChange={handleChange}
           required
         />
         <select name="role" value={form.role} onChange={handleChange}>
-          <option value="employe">Employe</option>
-          <option value="admin">Administrateur</option>
+          <option value="employe">{t('comptes.roleEmploye')}</option>
+          <option value="admin">{t('comptes.roleAdmin')}</option>
         </select>
         {form.role === 'employe' && (
           <select name="employee_id" value={form.employee_id} onChange={handleChange} required>
-            <option value="">Employe lie...</option>
+            <option value="">{t('comptes.employeLieOption')}</option>
             {employees.map((emp) => (
               <option key={emp.id} value={emp.id}>
                 {emp.prenom} {emp.nom}
@@ -95,16 +94,16 @@ export default function Comptes() {
             ))}
           </select>
         )}
-        <button type="submit">Creer le compte</button>
+        <button type="submit">{t('comptes.creerCompte')}</button>
       </form>
 
       <table>
         <thead>
           <tr>
-            <th>Identifiant</th>
-            <th>Role</th>
-            <th>Employe lie</th>
-            <th>Statut</th>
+            <th>{t('comptes.colIdentifiant')}</th>
+            <th>{t('comptes.colRole')}</th>
+            <th>{t('comptes.colEmployeLie')}</th>
+            <th>{t('comptes.colStatut')}</th>
             <th></th>
           </tr>
         </thead>
@@ -112,15 +111,15 @@ export default function Comptes() {
           {comptes.map((c) => (
             <tr key={c.id}>
               <td>{c.email}</td>
-              <td>{c.role === 'admin' ? 'Administrateur' : 'Employe'}</td>
+              <td>{c.role === 'admin' ? t('comptes.roleAdmin') : t('comptes.roleEmploye')}</td>
               <td>{c.employee ? `${c.employee.prenom} ${c.employee.nom}` : '-'}</td>
-              <td>{c.actif ? 'Actif' : 'Desactive'}</td>
+              <td>{c.actif ? t('common.active') : t('comptes.desactive')}</td>
               <td className="actions">
                 <button className="secondary" onClick={() => basculerActif(c)}>
-                  {c.actif ? 'Desactiver' : 'Reactiver'}
+                  {c.actif ? t('comptes.desactiver') : t('comptes.reactiver')}
                 </button>
                 <button className="danger" onClick={() => supprimer(c.id)}>
-                  Supprimer
+                  {t('comptes.supprimer')}
                 </button>
               </td>
             </tr>
@@ -128,7 +127,7 @@ export default function Comptes() {
           {comptes.length === 0 && (
             <tr>
               <td colSpan={5} className="vide">
-                Aucun compte
+                {t('comptes.aucunCompte')}
               </td>
             </tr>
           )}

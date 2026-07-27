@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext.jsx';
+import { useLangue } from '../LangueContext.jsx';
 
 export default function MonCompte() {
   const { user, deconnecter } = useAuth();
+  const { t } = useLangue();
   const [motDePasseActuel, setMotDePasseActuel] = useState('');
   const [nouveauMotDePasse, setNouveauMotDePasse] = useState('');
   const [erreur, setErreur] = useState('');
@@ -15,7 +17,7 @@ export default function MonCompte() {
     setMessage('');
     try {
       await api.changerMotDePasse(motDePasseActuel, nouveauMotDePasse);
-      setMessage('Mot de passe modifie.');
+      setMessage(t('monCompte.motDePasseModifie'));
       setMotDePasseActuel('');
       setNouveauMotDePasse('');
     } catch (err) {
@@ -25,10 +27,10 @@ export default function MonCompte() {
 
   return (
     <div className="panel">
-      <h2>Mon compte</h2>
+      <h2>{t('monCompte.title')}</h2>
       <p>
-        Connecte en tant que <strong>{user.email}</strong> (
-        {user.role === 'admin' ? 'Administrateur' : 'Employe'})
+        {t('monCompte.connecteEnTant')} <strong>{user.email}</strong> (
+        {user.role === 'admin' ? t('comptes.roleAdmin') : t('comptes.roleEmploye')})
       </p>
 
       {erreur && <p className="erreur">{erreur}</p>}
@@ -37,23 +39,23 @@ export default function MonCompte() {
       <form className="form-inline" onSubmit={handleSubmit}>
         <input
           type="password"
-          placeholder="Mot de passe actuel"
+          placeholder={t('monCompte.motDePasseActuelPlaceholder')}
           value={motDePasseActuel}
           onChange={(e) => setMotDePasseActuel(e.target.value)}
           required
         />
         <input
           type="password"
-          placeholder="Nouveau mot de passe"
+          placeholder={t('monCompte.nouveauMotDePassePlaceholder')}
           value={nouveauMotDePasse}
           onChange={(e) => setNouveauMotDePasse(e.target.value)}
           required
         />
-        <button type="submit">Changer le mot de passe</button>
+        <button type="submit">{t('monCompte.changerMotDePasse')}</button>
       </form>
 
       <button className="secondary" onClick={deconnecter}>
-        Se deconnecter
+        {t('monCompte.seDeconnecter')}
       </button>
     </div>
   );

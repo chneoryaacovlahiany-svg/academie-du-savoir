@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext.jsx';
+import { useLangue } from '../LangueContext.jsx';
 import { dateLocale } from '../dateUtils';
 import {
   permissionNotifications,
@@ -41,9 +42,9 @@ function calculerRappel(horaires, statut, maintenant) {
   return null;
 }
 
-function formatHeure(iso) {
+function formatHeure(iso, locale) {
   if (!iso) return '-';
-  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 }
 
 function formatDuree(heures) {
@@ -51,12 +52,6 @@ function formatDuree(heures) {
   const h = Math.floor(heures);
   const m = Math.round((heures - h) * 60);
   return `${h}h${String(m).padStart(2, '0')}`;
-}
-
-function labelLieu(lieu) {
-  if (lieu === 'bureau') return 'Bureau';
-  if (lieu === 'domicile') return 'Domicile';
-  return null;
 }
 
 function debutSemaine(date) {
@@ -95,21 +90,24 @@ function decalerPeriode(mode, date, direction) {
   return d;
 }
 
-function libellePeriode(mode, date) {
+function libellePeriode(mode, date, locale, t) {
   if (mode === 'semaine') {
     const { debut, fin } = plagePeriode('semaine', date);
-    return `Semaine du ${debut.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au ${fin.toLocaleDateString(
-      'fr-FR',
-      { day: 'numeric', month: 'long', year: 'numeric' }
-    )}`;
+    return t('pointage.semaineDu', {
+      debut: debut.toLocaleDateString(locale, { day: 'numeric', month: 'long' }),
+      fin: fin.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' }),
+    });
   }
-  if (mode === 'mois') return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  if (mode === 'mois') return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
   if (mode === 'annee') return String(date.getFullYear());
-  return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return date.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default function Pointage() {
   const { user } = useAuth();
+  const { t, locale, direction } = useLangue();
+  const flecheArriere = direction === 'rtl' ? '→' : '←';
+  const flecheAvant = direction === 'rtl' ? '←' : '→';
   const [employees, setEmployees] = useState([]);
   const [statuts, setStatuts] = useState({});
   const [horaires, setHoraires] = useState({});
@@ -161,12 +159,12 @@ export default function Pointage() {
     if (!user?.employee_id) return;
     const rappel = calculerRappel(horaires[user.employee_id], statuts[user.employee_id], maintenant);
     if (rappel === 'entree') {
-      envoyerNotificationUneFois(`entree-${user.employee_id}`, 'Pointeuse', {
-        body: "N'oubliez pas de pointer votre entree.",
+      envoyerNotificationUneFois(`entree-${user.employee_id}`, t('header.appName'), {
+        body: t('pointage.rappelEntree'),
       });
     } else if (rappel === 'sortie') {
-      envoyerNotificationUneFois(`sortie-${user.employee_id}`, 'Pointeuse', {
-        body: "N'oubliez pas de pointer votre sortie.",
+      envoyerNotificationUneFois(`sortie-${user.employee_id}`, t('header.appName'), {
+        body: t('pointage.rappelSortie'),
       });
     }
   }, [user, horaires, statuts, maintenant]);
@@ -203,25 +201,25 @@ export default function Pointage() {
 
   return (
     <div className="panel">
-      <h2>Pointage</h2>
+      <h2>{t('pointage.title')}</h2>
 
       <div className="navigation-periode">
         <select value={modeVue} onChange={(e) => setModeVue(e.target.value)}>
-          <option value="jour">Jour</option>
-          <option value="semaine">Semaine</option>
-          <option value="mois">Mois</option>
-          <option value="annee">Annee</option>
+          <option value="jour">{t('pointage.modeJour')}</option>
+          <option value="semaine">{t('pointage.modeSemaine')}</option>
+          <option value="mois">{t('pointage.modeMois')}</option>
+          <option value="annee">{t('pointage.modeAnnee')}</option>
         </select>
         <button type="button" className="secondary" onClick={() => setDateReference((d) => decalerPeriode(modeVue, d, -1))}>
-          ←
+          {flecheArriere}
         </button>
-        <span className="libelle-periode capitalize">{libellePeriode(modeVue, dateReference)}</span>
+        <span className="libelle-periode capitalize">{libellePeriode(modeVue, dateReference, locale, t)}</span>
         <button type="button" className="secondary" onClick={() => setDateReference((d) => decalerPeriode(modeVue, d, 1))}>
-          →
+          {flecheAvant}
         </button>
         {!estAujourdhui && (
           <button type="button" onClick={allerAujourdhui}>
-            Aujourd'hui
+            {t('pointage.aujourdhui')}
           </button>
         )}
       </div>
@@ -230,9 +228,9 @@ export default function Pointage() {
 
       {estAujourdhui && user?.employee_id && permission === 'default' && (
         <p className="confirmation">
-          Active les notifications pour recevoir un rappel si tu oublies de pointer.{' '}
+          {t('pointage.activerNotifTexte')}{' '}
           <button type="button" className="secondary" onClick={activerNotifications}>
-            Activer les notifications
+            {t('pointage.activerNotifBouton')}
           </button>
         </p>
       )}
@@ -252,25 +250,26 @@ export default function Pointage() {
                 </div>
                 <div className="carte-poste">{emp.poste}</div>
                 <div className="carte-heures">
-                  Entree: {formatHeure(statut?.heure_entree)} | Sortie: {formatHeure(statut?.heure_sortie)}
-                  {labelLieu(statut?.lieu) && ` (${labelLieu(statut.lieu)})`}
+                  {t('pointage.entreeLabel')}: {formatHeure(statut?.heure_entree, locale)} | {t('pointage.sortieLabel')}:{' '}
+                  {formatHeure(statut?.heure_sortie, locale)}
+                  {statut?.lieu && ` (${t(`common.${statut.lieu}`)})`}
                 </div>
-                {termine && <div className="carte-total">Total: {formatDuree(statut.heures_travaillees)}</div>}
+                {termine && <div className="carte-total">{t('pointage.total')}: {formatDuree(statut.heures_travaillees)}</div>}
                 {rappel === 'entree' && (
-                  <p className="rappel-pointage">N'oubliez pas de pointer l'entree !</p>
+                  <p className="rappel-pointage">{t('pointage.rappelEntree')}</p>
                 )}
                 {rappel === 'sortie' && (
-                  <p className="rappel-pointage">N'oubliez pas de pointer la sortie !</p>
+                  <p className="rappel-pointage">{t('pointage.rappelSortie')}</p>
                 )}
                 {!pointe && !termine && (
                   <label className="champ-date-embauche">
-                    Lieu de pointage
+                    {t('pointage.lieuDePointage')}
                     <select
                       value={lieux[emp.id] || 'bureau'}
                       onChange={(e) => setLieux({ ...lieux, [emp.id]: e.target.value })}
                     >
-                      <option value="bureau">Bureau</option>
-                      <option value="domicile">Domicile</option>
+                      <option value="bureau">{t('common.bureau')}</option>
+                      <option value="domicile">{t('common.domicile')}</option>
                     </select>
                   </label>
                 )}
@@ -280,20 +279,20 @@ export default function Pointage() {
                     disabled={pointe || termine}
                     onClick={() => pointer(emp.id, 'entree')}
                   >
-                    Entree
+                    {t('pointage.entreeLabel')}
                   </button>
                   <button
                     className="sortie"
                     disabled={!pointe}
                     onClick={() => pointer(emp.id, 'sortie')}
                   >
-                    Sortie
+                    {t('pointage.sortieLabel')}
                   </button>
                 </div>
               </div>
             );
           })}
-          {employees.length === 0 && <p className="vide">Aucun employe actif. Ajoutez des employes dans l'onglet correspondant.</p>}
+          {employees.length === 0 && <p className="vide">{t('pointage.aucunEmployeActif')}</p>}
         </div>
       ) : (
         <div className="cartes-pointage">
@@ -307,18 +306,20 @@ export default function Pointage() {
                 <div className="carte-poste">{emp.poste}</div>
                 {modeVue === 'jour' ? (
                   <div className="carte-heures">
-                    Entree: {formatHeure(recap?.dernierPointage?.heure_entree)} | Sortie:{' '}
-                    {formatHeure(recap?.dernierPointage?.heure_sortie)}
-                    {labelLieu(recap?.dernierPointage?.lieu) && ` (${labelLieu(recap.dernierPointage.lieu)})`}
+                    {t('pointage.entreeLabel')}: {formatHeure(recap?.dernierPointage?.heure_entree, locale)} |{' '}
+                    {t('pointage.sortieLabel')}: {formatHeure(recap?.dernierPointage?.heure_sortie, locale)}
+                    {recap?.dernierPointage?.lieu && ` (${t(`common.${recap.dernierPointage.lieu}`)})`}
                   </div>
                 ) : (
-                  <div className="carte-heures">{recap ? `${recap.jours} jour(s) pointe(s)` : 'Aucun pointage'}</div>
+                  <div className="carte-heures">
+                    {recap ? t('pointage.joursPointes', { n: recap.jours }) : t('pointage.aucunPointage')}
+                  </div>
                 )}
-                <div className="carte-total">Total: {recap ? formatDuree(recap.heures) : formatDuree(0)}</div>
+                <div className="carte-total">{t('pointage.total')}: {recap ? formatDuree(recap.heures) : formatDuree(0)}</div>
               </div>
             );
           })}
-          {employees.length === 0 && <p className="vide">Aucun employe actif. Ajoutez des employes dans l'onglet correspondant.</p>}
+          {employees.length === 0 && <p className="vide">{t('pointage.aucunEmployeActif')}</p>}
         </div>
       )}
     </div>

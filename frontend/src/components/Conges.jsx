@@ -2,30 +2,32 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
 import { useAuth } from '../AuthContext.jsx';
-
-const TYPES = [
-  { value: 'conge_paye', label: 'Conge paye' },
-  { value: 'sans_solde', label: 'Sans solde' },
-  { value: 'maladie', label: 'Maladie' },
-  { value: 'autre', label: 'Autre' },
-];
-
-const STATUT_LABELS = {
-  en_attente: 'En attente',
-  approuve: 'Approuve',
-  refuse: 'Refuse',
-};
+import { useLangue } from '../LangueContext.jsx';
 
 const CONGE_VIDE = { employee_id: '', date_debut: '', date_fin: '', type: 'conge_paye', commentaire: '' };
 
 export default function Conges() {
   const { formatMontant } = useDevise();
   const { user } = useAuth();
+  const { t } = useLangue();
   const estAdmin = user.role === 'admin';
   const [employees, setEmployees] = useState([]);
   const [conges, setConges] = useState([]);
   const [form, setForm] = useState(CONGE_VIDE);
   const [erreur, setErreur] = useState('');
+
+  const TYPES = [
+    { value: 'conge_paye', label: t('conges.typeCongePaye') },
+    { value: 'sans_solde', label: t('conges.typeSansSolde') },
+    { value: 'maladie', label: t('conges.typeMaladie') },
+    { value: 'autre', label: t('conges.typeAutre') },
+  ];
+
+  const STATUT_LABELS = {
+    en_attente: t('conges.statutEnAttente'),
+    approuve: t('conges.statutApprouve'),
+    refuse: t('conges.statutRefuse'),
+  };
 
   const charger = async () => {
     try {
@@ -74,22 +76,23 @@ export default function Conges() {
   };
 
   const supprimer = async (id) => {
-    if (!confirm('Supprimer cette demande de conge ?')) return;
+    if (!confirm(t('conges.confirmSupprimer'))) return;
     await api.deleteConge(id);
     charger();
   };
 
   return (
     <div className="panel">
-      <h2>Conges & vacances</h2>
+      <h2>{t('conges.title')}</h2>
 
       <form className="form-inline" onSubmit={handleSubmit}>
         {estAdmin && (
           <select name="employee_id" value={form.employee_id} onChange={handleChange} required>
-            <option value="">Employe...</option>
+            <option value="">{t('conges.employeOption')}</option>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.prenom} {e.nom} (conges: {e.solde_conges_disponible}j, maladie: {e.solde_maladie_disponible}j)
+                {e.prenom} {e.nom}{' '}
+                {t('conges.congesEtMaladie', { conges: e.solde_conges_disponible, maladie: e.solde_maladie_disponible })}
               </option>
             ))}
           </select>
@@ -97,14 +100,14 @@ export default function Conges() {
         <input type="date" name="date_debut" value={form.date_debut} onChange={handleChange} required />
         <input type="date" name="date_fin" value={form.date_fin} onChange={handleChange} required />
         <select name="type" value={form.type} onChange={handleChange}>
-          {TYPES.map((t) => (
-            <option key={t.value} value={t.value}>
-              {t.label}
+          {TYPES.map((tp) => (
+            <option key={tp.value} value={tp.value}>
+              {tp.label}
             </option>
           ))}
         </select>
-        <input name="commentaire" placeholder="Commentaire" value={form.commentaire} onChange={handleChange} />
-        <button type="submit">Demander</button>
+        <input name="commentaire" placeholder={t('conges.commentairePlaceholder')} value={form.commentaire} onChange={handleChange} />
+        <button type="submit">{t('conges.demander')}</button>
       </form>
 
       {erreur && <p className="erreur">{erreur}</p>}
@@ -112,13 +115,13 @@ export default function Conges() {
       <table>
         <thead>
           <tr>
-            <th>Employe</th>
-            <th>Debut</th>
-            <th>Fin</th>
-            <th>Jours</th>
-            <th>Type</th>
-            <th>Montant estime</th>
-            <th>Statut</th>
+            <th>{t('conges.colEmploye')}</th>
+            <th>{t('conges.colDebut')}</th>
+            <th>{t('conges.colFin')}</th>
+            <th>{t('conges.colJours')}</th>
+            <th>{t('conges.colType')}</th>
+            <th>{t('conges.colMontantEstime')}</th>
+            <th>{t('conges.colStatut')}</th>
             <th></th>
           </tr>
         </thead>
@@ -129,23 +132,23 @@ export default function Conges() {
               <td>{c.date_debut}</td>
               <td>{c.date_fin}</td>
               <td>{c.nb_jours}</td>
-              <td>{TYPES.find((t) => t.value === c.type)?.label || c.type}</td>
+              <td>{TYPES.find((tp) => tp.value === c.type)?.label || c.type}</td>
               <td>{c.type === 'maladie' ? formatMontant(c.montant_estime) : '-'}</td>
               <td>
                 <span className={`badge badge-${c.statut}`}>{STATUT_LABELS[c.statut]}</span>
               </td>
               <td className="actions">
                 {estAdmin && c.statut !== 'approuve' && (
-                  <button onClick={() => changerStatut(c.id, 'approuve')}>Approuver</button>
+                  <button onClick={() => changerStatut(c.id, 'approuve')}>{t('conges.approuver')}</button>
                 )}
                 {estAdmin && c.statut !== 'refuse' && (
                   <button className="secondary" onClick={() => changerStatut(c.id, 'refuse')}>
-                    Refuser
+                    {t('conges.refuser')}
                   </button>
                 )}
                 {estAdmin && (
                   <button className="danger" onClick={() => supprimer(c.id)}>
-                    Supprimer
+                    {t('conges.supprimer')}
                   </button>
                 )}
               </td>
@@ -154,7 +157,7 @@ export default function Conges() {
           {conges.length === 0 && (
             <tr>
               <td colSpan={8} className="vide">
-                Aucune demande de conge
+                {t('conges.aucuneDemande')}
               </td>
             </tr>
           )}

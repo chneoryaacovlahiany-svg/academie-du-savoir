@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
+import { useLangue } from '../LangueContext.jsx';
 import { dateLocale as aujourdhui } from '../dateUtils';
 
 const SEMAINES_PAR_MOIS = 52 / 12;
-
-const JOURS_SEMAINE_NOMS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 function horaireParDefaut(jourSemaine) {
   const jourOuvre = jourSemaine <= 4; // Lundi a Vendredi par defaut
@@ -34,6 +33,8 @@ function tauxHoraireCalcule(form) {
 
 export default function Employees() {
   const { formatMontant } = useDevise();
+  const { t } = useLangue();
+  const JOURS_SEMAINE_NOMS = t('common.joursLongs');
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState(EMPLOYE_VIDE);
   const [editingId, setEditingId] = useState(null);
@@ -99,7 +100,7 @@ export default function Employees() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer cet employe et tout son historique ?')) return;
+    if (!confirm(t('employees.confirmSupprimer'))) return;
     await api.deleteEmployee(id);
     charger();
   };
@@ -139,7 +140,7 @@ export default function Employees() {
     setMessageHoraire('');
     try {
       await api.updateHoraires(horaireEmployeeId, horaireLignes);
-      setMessageHoraire('Plage horaire enregistree.');
+      setMessageHoraire(t('employees.plageHoraireEnregistree'));
     } catch (err) {
       setErreur(err.message);
     }
@@ -147,14 +148,14 @@ export default function Employees() {
 
   return (
     <div className="panel">
-      <h2>Employes</h2>
+      <h2>{t('employees.title')}</h2>
 
       <form className="form-inline" onSubmit={handleSubmit}>
-        <input name="nom" placeholder="Nom" value={form.nom} onChange={handleChange} required />
-        <input name="prenom" placeholder="Prenom" value={form.prenom} onChange={handleChange} required />
-        <input name="poste" placeholder="Poste" value={form.poste} onChange={handleChange} />
+        <input name="nom" placeholder={t('employees.nomPlaceholder')} value={form.nom} onChange={handleChange} required />
+        <input name="prenom" placeholder={t('employees.prenomPlaceholder')} value={form.prenom} onChange={handleChange} required />
+        <input name="poste" placeholder={t('employees.postePlaceholder')} value={form.poste} onChange={handleChange} />
         <label className="champ-date-embauche">
-          Date d'embauche
+          {t('employees.dateEmbauche')}
           <input
             name="date_embauche"
             type="date"
@@ -165,8 +166,8 @@ export default function Employees() {
         </label>
 
         <select name="type_paie" value={form.type_paie} onChange={handleChange}>
-          <option value="horaire">Taux horaire</option>
-          <option value="mensuel">Salaire mensuel fixe</option>
+          <option value="horaire">{t('employees.tauxHoraireOption')}</option>
+          <option value="mensuel">{t('employees.salaireMensuelOption')}</option>
         </select>
 
         {form.type_paie === 'horaire' ? (
@@ -175,7 +176,7 @@ export default function Employees() {
             type="number"
             step="0.01"
             min="0"
-            placeholder="Taux horaire"
+            placeholder={t('employees.tauxHorairePlaceholder')}
             value={form.taux_horaire}
             onChange={handleChange}
             required
@@ -187,7 +188,7 @@ export default function Employees() {
               type="number"
               step="0.01"
               min="0"
-              placeholder="Salaire mensuel fixe"
+              placeholder={t('employees.salaireMensuelPlaceholder')}
               value={form.salaire_mensuel}
               onChange={handleChange}
               required
@@ -197,12 +198,14 @@ export default function Employees() {
               type="number"
               step="0.5"
               min="0"
-              placeholder="Heures par semaine"
+              placeholder={t('employees.heuresSemainePlaceholder')}
               value={form.heures_semaine}
               onChange={handleChange}
               required
             />
-            <span className="taux-calcule">Taux horaire calcule: {formatMontant(tauxHoraireCalcule(form))}/h</span>
+            <span className="taux-calcule">
+              {t('employees.tauxCalcule', { montant: formatMontant(tauxHoraireCalcule(form)) })}
+            </span>
           </>
         )}
 
@@ -210,12 +213,12 @@ export default function Employees() {
           name="solde_conges"
           type="number"
           step="0.5"
-          placeholder="Ajustement solde conges (jours)"
+          placeholder={t('employees.soldeCongesPlaceholder')}
           value={form.solde_conges}
           onChange={handleChange}
         />
         <label className="champ-date-embauche">
-          Pause (minutes)
+          {t('employees.pauseMinutesLabel')}
           <input
             name="pause_minutes"
             type="number"
@@ -226,13 +229,13 @@ export default function Employees() {
           />
         </label>
         <label className="champ-date-embauche">
-          Heures supplementaires
+          {t('employees.heuresSupLabel')}
           <select name="droit_heures_sup" value={form.droit_heures_sup} onChange={handleChange}>
-            <option value="oui">Autorisees</option>
-            <option value="non">Non autorisees</option>
+            <option value="oui">{t('employees.autorisees')}</option>
+            <option value="non">{t('employees.nonAutorisees')}</option>
           </select>
         </label>
-        <button type="submit">{editingId ? 'Modifier' : 'Ajouter'}</button>
+        <button type="submit">{editingId ? t('common.edit') : t('common.add')}</button>
         {editingId && (
           <button
             type="button"
@@ -242,7 +245,7 @@ export default function Employees() {
               setForm(EMPLOYE_VIDE);
             }}
           >
-            Annuler
+            {t('common.cancel')}
           </button>
         )}
       </form>
@@ -253,17 +256,17 @@ export default function Employees() {
       <table>
         <thead>
           <tr>
-            <th>Nom</th>
-            <th>Prenom</th>
-            <th>Poste</th>
-            <th>Anciennete</th>
-            <th>Mode de paie</th>
-            <th>Taux horaire</th>
-            <th>Solde conges</th>
-            <th>Solde maladie</th>
-            <th>Pause</th>
-            <th>Heures sup</th>
-            <th>Statut</th>
+            <th>{t('employees.colNom')}</th>
+            <th>{t('employees.colPrenom')}</th>
+            <th>{t('employees.colPoste')}</th>
+            <th>{t('employees.colAnciennete')}</th>
+            <th>{t('employees.colModePaie')}</th>
+            <th>{t('employees.colTauxHoraire')}</th>
+            <th>{t('employees.colSoldeConges')}</th>
+            <th>{t('employees.colSoldeMaladie')}</th>
+            <th>{t('employees.colPause')}</th>
+            <th>{t('employees.colHeuresSup')}</th>
+            <th>{t('employees.colStatut')}</th>
             <th></th>
           </tr>
         </thead>
@@ -276,22 +279,22 @@ export default function Employees() {
               <td>{emp.date_embauche || '-'}</td>
               <td>
                 {emp.type_paie === 'mensuel'
-                  ? `Mensuel fixe (${formatMontant(emp.salaire_mensuel)}, ${emp.heures_semaine}h/sem)`
-                  : 'Horaire'}
+                  ? t('employees.mensuelFixe', { montant: formatMontant(emp.salaire_mensuel), heures: emp.heures_semaine })
+                  : t('employees.horaire')}
               </td>
               <td>{formatMontant(emp.taux_horaire)}/h</td>
-              <td>{emp.solde_conges_disponible} j</td>
-              <td>{emp.solde_maladie_disponible} j</td>
-              <td>{emp.pause_minutes || 0} min</td>
-              <td>{emp.droit_heures_sup ? 'Autorisees' : 'Non autorisees'}</td>
-              <td>{emp.actif ? 'Actif' : 'Inactif'}</td>
+              <td>{emp.solde_conges_disponible} {t('common.joursAbrev')}</td>
+              <td>{emp.solde_maladie_disponible} {t('common.joursAbrev')}</td>
+              <td>{emp.pause_minutes || 0} {t('common.minAbrev')}</td>
+              <td>{emp.droit_heures_sup ? t('employees.autorisees') : t('employees.nonAutorisees')}</td>
+              <td>{emp.actif ? t('common.active') : t('common.inactive')}</td>
               <td className="actions">
-                <button onClick={() => handleEdit(emp)}>Modifier</button>
+                <button onClick={() => handleEdit(emp)}>{t('common.edit')}</button>
                 <button className="secondary" onClick={() => ouvrirHoraires(emp)}>
-                  Horaires
+                  {t('employees.horairesBtn')}
                 </button>
                 <button className="danger" onClick={() => handleDelete(emp.id)}>
-                  Supprimer
+                  {t('common.delete')}
                 </button>
               </td>
             </tr>
@@ -299,7 +302,7 @@ export default function Employees() {
           {employees.length === 0 && (
             <tr>
               <td colSpan={12} className="vide">
-                Aucun employe pour le moment
+                {t('employees.aucunEmploye')}
               </td>
             </tr>
           )}
@@ -310,27 +313,23 @@ export default function Employees() {
       {horaireEmployeeId && (
         <div className="panneau-edition-jour">
           <h4>
-            Plage horaire de {(() => {
-              const emp = employees.find((e) => e.id === horaireEmployeeId);
-              return emp ? `${emp.prenom} ${emp.nom}` : '';
-            })()}
+            {t('employees.plageHoraireDe', {
+              nom: (() => {
+                const emp = employees.find((e) => e.id === horaireEmployeeId);
+                return emp ? `${emp.prenom} ${emp.nom}` : '';
+              })(),
+            })}
           </h4>
-          <p className="aide">
-            Le droit aux heures supplementaires se regle dans le formulaire de l'employe
-            ci-dessus. La case "Pause" deduit la pause (definie ci-dessus en minutes) des heures
-            de ce jour-la: decochez-la pour une demi-journee sans pause. Pour les employes au
-            salaire mensuel fixe, un ecart entre ces heures et les heures reellement payees
-            (retard, depart anticipe) sera deduit du salaire dans le Rapport & Paie.
-          </p>
+          <p className="aide">{t('employees.horairesAide')}</p>
           {messageHoraire && <p className="confirmation">{messageHoraire}</p>}
           <table>
             <thead>
               <tr>
-                <th>Jour</th>
-                <th>Travaille</th>
-                <th>Heure debut</th>
-                <th>Heure fin</th>
-                <th>Pause</th>
+                <th>{t('employees.colJourHoraire')}</th>
+                <th>{t('employees.colTravaille')}</th>
+                <th>{t('employees.colHeureDebut')}</th>
+                <th>{t('employees.colHeureFin')}</th>
+                <th>{t('calendrier.colPause')}</th>
               </tr>
             </thead>
             <tbody>
@@ -373,9 +372,9 @@ export default function Employees() {
             </tbody>
           </table>
           <div className="form-inline">
-            <button onClick={enregistrerHoraires}>Enregistrer</button>
+            <button onClick={enregistrerHoraires}>{t('common.save')}</button>
             <button className="secondary" onClick={() => setHoraireEmployeeId(null)}>
-              Fermer
+              {t('common.close')}
             </button>
           </div>
         </div>

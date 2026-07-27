@@ -1,32 +1,34 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useDevise } from '../DeviseContext.jsx';
+import { useLangue } from '../LangueContext.jsx';
 
-const STATUT_INFO = {
-  bon: { label: 'A jour', icone: '✓', classe: 'statut-bon' },
-  excedent: { label: 'Excedent a faire prendre', icone: '!', classe: 'statut-excedent' },
-  critique: { label: 'Solde negatif', icone: '✕', classe: 'statut-critique' },
-};
-
-const TYPE_LABELS = {
-  conge_paye: 'Conge paye',
-  sans_solde: 'Sans solde',
-  maladie: 'Maladie',
-  autre: 'Autre',
-};
-
-function formatDateFr(dateStr) {
+function formatDateFr(dateStr, locale) {
   if (!dateStr) return null;
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  return new Date(dateStr).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default function Dashboard() {
   const { formatMontant } = useDevise();
+  const { t, locale } = useLangue();
   const [employees, setEmployees] = useState([]);
   const [employeeFiltre, setEmployeeFiltre] = useState('');
   const [donnees, setDonnees] = useState(null);
   const [congesEnAttente, setCongesEnAttente] = useState([]);
   const [erreur, setErreur] = useState('');
+
+  const STATUT_INFO = {
+    bon: { label: t('dashboard.statutBon'), icone: '✓', classe: 'statut-bon' },
+    excedent: { label: t('dashboard.statutExcedent'), icone: '!', classe: 'statut-excedent' },
+    critique: { label: t('dashboard.statutCritique'), icone: '✕', classe: 'statut-critique' },
+  };
+
+  const TYPE_LABELS = {
+    conge_paye: t('dashboard.typeCongePaye'),
+    sans_solde: t('dashboard.typeSansSolde'),
+    maladie: t('dashboard.typeMaladie'),
+    autre: t('dashboard.typeAutre'),
+  };
 
   const charger = async (employeeId) => {
     setErreur('');
@@ -66,19 +68,19 @@ export default function Dashboard() {
   };
 
   if (erreur) return <div className="panel"><p className="erreur">{erreur}</p></div>;
-  if (!donnees) return <div className="panel">Chargement...</div>;
+  if (!donnees) return <div className="panel">{t('common.loading')}</div>;
 
   const { global: g, employes } = donnees;
 
   return (
     <div className="panel">
-      <h2>Tableau de bord</h2>
+      <h2>{t('dashboard.title')}</h2>
 
       <div className="form-inline">
         <label>
-          Employe:{' '}
+          {t('dashboard.employeLabel')}{' '}
           <select value={employeeFiltre} onChange={(e) => setEmployeeFiltre(e.target.value)}>
-            <option value="">Tous les employes</option>
+            <option value="">{t('common.allEmployees')}</option>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.prenom} {e.nom}
@@ -91,37 +93,39 @@ export default function Dashboard() {
       <div className="cadrans">
         <div className="cadran">
           <div className="cadran-valeur">{g.jours_conges_pris_annee}</div>
-          <div className="cadran-label">Jours de conge pris ({donnees.periode.annee})</div>
+          <div className="cadran-label">{t('dashboard.joursCongesPris', { annee: donnees.periode.annee })}</div>
         </div>
         <div className="cadran">
           <div className="cadran-valeur">{g.jours_conges_restants}</div>
           <div className="cadran-label">
-            Jours de conge restants {employeeFiltre ? '' : '(tous employes)'}
+            {t('dashboard.joursCongesRestants')} {employeeFiltre ? '' : t('dashboard.tousEmployesSuffix')}
           </div>
         </div>
         <div className="cadran">
           <div className="cadran-valeur">{formatMontant(g.masse_salariale_horaire)}</div>
-          <div className="cadran-label">Paie horaire (mois en cours)</div>
+          <div className="cadran-label">{t('dashboard.paieHoraire')}</div>
         </div>
         <div className="cadran">
           <div className="cadran-valeur">{formatMontant(g.masse_salariale_mensuelle)}</div>
-          <div className="cadran-label">Paie fixe (mois en cours)</div>
+          <div className="cadran-label">{t('dashboard.paieFixe')}</div>
         </div>
         <div className="cadran cadran-principal">
           <div className="cadran-valeur">{formatMontant(g.masse_salariale_totale)}</div>
-          <div className="cadran-label">Total a payer (mois en cours)</div>
+          <div className="cadran-label">{t('dashboard.totalAPayer')}</div>
         </div>
         <div className="cadran">
           <div className="cadran-valeur cadran-valeur-petite">
-            {g.prochain_jour_ferie ? formatDateFr(g.prochain_jour_ferie.date) : 'Aucun'}
+            {g.prochain_jour_ferie ? formatDateFr(g.prochain_jour_ferie.date, locale) : t('dashboard.aucun')}
           </div>
           <div className="cadran-label">
-            {g.prochain_jour_ferie ? `Prochain ferie: ${g.prochain_jour_ferie.nom}` : 'Prochain jour ferie'}
+            {g.prochain_jour_ferie
+              ? t('dashboard.prochainFerie', { nom: g.prochain_jour_ferie.nom })
+              : t('dashboard.prochainJourFerie')}
           </div>
         </div>
         <div className={`cadran ${congesEnAttente.length > 0 ? 'cadran-alerte' : ''}`}>
           <div className="cadran-valeur">{congesEnAttente.length}</div>
-          <div className="cadran-label">Demande(s) de conge en attente</div>
+          <div className="cadran-label">{t('dashboard.demandesCongeAttente')}</div>
         </div>
       </div>
 
@@ -129,16 +133,16 @@ export default function Dashboard() {
 
       {congesEnAttente.length > 0 && (
         <>
-          <h3>Demandes de conge en attente</h3>
+          <h3>{t('dashboard.demandesCongeAttenteTitre')}</h3>
           <div className="table-scroll">
             <table>
               <thead>
                 <tr>
-                  <th>Employe</th>
-                  <th>Debut</th>
-                  <th>Fin</th>
-                  <th>Jours</th>
-                  <th>Type</th>
+                  <th>{t('common.employee')}</th>
+                  <th>{t('dashboard.colDebut')}</th>
+                  <th>{t('dashboard.colFin')}</th>
+                  <th>{t('dashboard.colJours')}</th>
+                  <th>{t('dashboard.colType')}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -151,9 +155,9 @@ export default function Dashboard() {
                     <td>{c.nb_jours}</td>
                     <td>{TYPE_LABELS[c.type] || c.type}</td>
                     <td className="actions">
-                      <button onClick={() => traiterConge(c.id, 'approuve')}>Approuver</button>
+                      <button onClick={() => traiterConge(c.id, 'approuve')}>{t('dashboard.approuver')}</button>
                       <button className="secondary" onClick={() => traiterConge(c.id, 'refuse')}>
-                        Refuser
+                        {t('dashboard.refuser')}
                       </button>
                     </td>
                   </tr>
@@ -164,17 +168,17 @@ export default function Dashboard() {
         </>
       )}
 
-      <h3>Conges par employe</h3>
+      <h3>{t('dashboard.congesParEmploye')}</h3>
       <div className="table-scroll">
         <table>
           <thead>
             <tr>
-              <th>Employe</th>
-              <th>Droit annuel actuel</th>
-              <th>Pris cette annee</th>
-              <th>Restant</th>
-              <th>Solde maladie</th>
-              <th>Statut</th>
+              <th>{t('common.employee')}</th>
+              <th>{t('dashboard.droitAnnuelActuel')}</th>
+              <th>{t('dashboard.prisCetteAnnee')}</th>
+              <th>{t('dashboard.restant')}</th>
+              <th>{t('dashboard.soldeMaladie')}</th>
+              <th>{t('dashboard.statut')}</th>
             </tr>
           </thead>
           <tbody>
@@ -185,10 +189,10 @@ export default function Dashboard() {
                   <td>
                     {e.prenom} {e.nom}
                   </td>
-                  <td>{e.droit_annuel_actuel} j/an</td>
-                  <td>{e.jours_pris_annee} j</td>
-                  <td>{e.jours_restants} j</td>
-                  <td>{e.solde_maladie_disponible} j</td>
+                  <td>{e.droit_annuel_actuel} {t('dashboard.parAn')}</td>
+                  <td>{e.jours_pris_annee} {t('common.joursAbrev')}</td>
+                  <td>{e.jours_restants} {t('common.joursAbrev')}</td>
+                  <td>{e.solde_maladie_disponible} {t('common.joursAbrev')}</td>
                   <td>
                     <span className={`statut-badge ${info.classe}`}>
                       <span aria-hidden="true">{info.icone}</span> {info.label}
@@ -200,7 +204,7 @@ export default function Dashboard() {
             {employes.length === 0 && (
               <tr>
                 <td colSpan={6} className="vide">
-                  Aucun employe actif
+                  {t('dashboard.aucunEmployeActif')}
                 </td>
               </tr>
             )}

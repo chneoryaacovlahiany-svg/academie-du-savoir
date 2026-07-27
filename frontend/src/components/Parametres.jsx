@@ -1,44 +1,13 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api';
 import { useEntreprise } from '../EntrepriseContext.jsx';
+import { useLangue } from '../LangueContext.jsx';
 
 const TAILLE_MAX_LOGO = 240;
 
-function redimensionnerImage(fichier, tailleMax) {
-  return new Promise((resolve, reject) => {
-    const lecteur = new FileReader();
-    lecteur.onerror = () => reject(new Error('Impossible de lire le fichier'));
-    lecteur.onload = () => {
-      const image = new Image();
-      image.onerror = () => reject(new Error('Fichier image invalide'));
-      image.onload = () => {
-        const ratio = Math.min(1, tailleMax / Math.max(image.width, image.height));
-        const largeur = Math.round(image.width * ratio);
-        const hauteur = Math.round(image.height * ratio);
-        const canvas = document.createElement('canvas');
-        canvas.width = largeur;
-        canvas.height = hauteur;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(image, 0, 0, largeur, hauteur);
-        resolve(canvas.toDataURL('image/png'));
-      };
-      image.src = lecteur.result;
-    };
-    lecteur.readAsDataURL(fichier);
-  });
-}
-
-const CHAMPS_PARAMETRES = [
-  { cle: 'heures_standard_jour', label: 'Heures standard par jour', step: '0.5' },
-  { cle: 'seuil_heures_sup_125', label: 'Heures sup. a 125% avant de passer a 150%', step: '0.5' },
-  { cle: 'majoration_heures_sup_125', label: 'Majoration heures sup. (1re tranche)', step: '0.01' },
-  { cle: 'majoration_heures_sup_150', label: 'Majoration heures sup. (2e tranche)', step: '0.01' },
-  { cle: 'accumulation_maladie_mois', label: 'Jours de maladie acquis par mois travaille', step: '0.1' },
-  { cle: 'plafond_conges_maladie', label: 'Plafond de jours de maladie cumulables', step: '1' },
-];
-
 export default function Parametres() {
   const { entreprise, rafraichirEntreprise } = useEntreprise();
+  const { t } = useLangue();
   const [parametres, setParametres] = useState(null);
   const [bareme, setBareme] = useState([]);
   const [feries, setFeries] = useState([]);
@@ -50,6 +19,39 @@ export default function Parametres() {
   const [formEntreprise, setFormEntreprise] = useState(entreprise);
   const [messageEntreprise, setMessageEntreprise] = useState('');
   const [erreurEntreprise, setErreurEntreprise] = useState('');
+
+  function redimensionnerImage(fichier, tailleMax) {
+    return new Promise((resolve, reject) => {
+      const lecteur = new FileReader();
+      lecteur.onerror = () => reject(new Error(t('parametres.erreurLectureFichier')));
+      lecteur.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error(t('parametres.erreurFichierInvalide')));
+        image.onload = () => {
+          const ratio = Math.min(1, tailleMax / Math.max(image.width, image.height));
+          const largeur = Math.round(image.width * ratio);
+          const hauteur = Math.round(image.height * ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = largeur;
+          canvas.height = hauteur;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(image, 0, 0, largeur, hauteur);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        image.src = lecteur.result;
+      };
+      lecteur.readAsDataURL(fichier);
+    });
+  }
+
+  const CHAMPS_PARAMETRES = [
+    { cle: 'heures_standard_jour', label: t('parametres.heuresStandardJour'), step: '0.5' },
+    { cle: 'seuil_heures_sup_125', label: t('parametres.seuilHeuresSup125'), step: '0.5' },
+    { cle: 'majoration_heures_sup_125', label: t('parametres.majorationHeuresSup125'), step: '0.01' },
+    { cle: 'majoration_heures_sup_150', label: t('parametres.majorationHeuresSup150'), step: '0.01' },
+    { cle: 'accumulation_maladie_mois', label: t('parametres.accumulationMaladieMois'), step: '0.1' },
+    { cle: 'plafond_conges_maladie', label: t('parametres.plafondCongesMaladie'), step: '1' },
+  ];
 
   useEffect(() => {
     setFormEntreprise(entreprise);
@@ -78,7 +80,7 @@ export default function Parametres() {
     try {
       await api.updateEntreprise(formEntreprise);
       await rafraichirEntreprise();
-      setMessageEntreprise('Informations de la societe enregistrees.');
+      setMessageEntreprise(t('parametres.societeEnregistree'));
     } catch (err) {
       setErreurEntreprise(err.message);
     }
@@ -105,7 +107,7 @@ export default function Parametres() {
     setMessage('');
     try {
       await api.updateParametres(parametres);
-      setMessage('Parametres enregistres.');
+      setMessage(t('parametres.parametresEnregistres'));
     } catch (err) {
       setErreur(err.message);
     }
@@ -136,7 +138,7 @@ export default function Parametres() {
       }));
       const resultat = await api.updateBareme(lignes);
       setBareme(resultat);
-      setMessage('Bareme des conges enregistre.');
+      setMessage(t('parametres.baremeEnregistre'));
     } catch (err) {
       setErreur(err.message);
     }
@@ -159,32 +161,24 @@ export default function Parametres() {
     charger();
   };
 
-  if (!parametres) return <div className="panel">Chargement...</div>;
+  if (!parametres) return <div className="panel">{t('common.loading')}</div>;
 
   return (
     <div className="panel">
-      <h2>Parametres</h2>
+      <h2>{t('parametres.title')}</h2>
 
-      <div className="avertissement-legal">
-        Les valeurs par defaut ci-dessous sont donnees a titre indicatif et s'inspirent du droit du
-        travail israelien (conges annuels, maladie, heures supplementaires). Elles ne remplacent pas
-        un conseil professionnel: verifiez-les avec un comptable ou conseiller en paie (רואה חשבון /
-        יועץ שכר) avant de vous en servir pour payer reellement vos employes.
-      </div>
+      <div className="avertissement-legal">{t('parametres.avertissementLegal')}</div>
 
       {erreur && <p className="erreur">{erreur}</p>}
       {message && <p className="confirmation">{message}</p>}
 
-      <h3>Informations de la societe</h3>
-      <p className="aide">
-        Ces informations et le logo apparaissent en en-tete de l'application et sur les exports PDF /
-        Excel du calendrier et du rapport de paie.
-      </p>
+      <h3>{t('parametres.infosSocieteTitre')}</h3>
+      <p className="aide">{t('parametres.infosSocieteAide')}</p>
       {erreurEntreprise && <p className="erreur">{erreurEntreprise}</p>}
       {messageEntreprise && <p className="confirmation">{messageEntreprise}</p>}
       <form className="form-parametres" onSubmit={enregistrerEntreprise}>
         <label className="champ-parametre">
-          Nom de la societe
+          {t('parametres.nomSociete')}
           <input
             type="text"
             value={formEntreprise.nom}
@@ -192,7 +186,7 @@ export default function Parametres() {
           />
         </label>
         <label className="champ-parametre">
-          Adresse
+          {t('parametres.adresse')}
           <input
             type="text"
             value={formEntreprise.adresse}
@@ -200,7 +194,7 @@ export default function Parametres() {
           />
         </label>
         <label className="champ-parametre">
-          Telephone
+          {t('parametres.telephone')}
           <input
             type="text"
             value={formEntreprise.telephone}
@@ -208,7 +202,7 @@ export default function Parametres() {
           />
         </label>
         <label className="champ-parametre">
-          Email
+          {t('parametres.email')}
           <input
             type="email"
             value={formEntreprise.email}
@@ -216,21 +210,21 @@ export default function Parametres() {
           />
         </label>
         <div className="champ-parametre">
-          Logo
+          {t('parametres.logo')}
           <input type="file" accept="image/*" onChange={handleLogoChange} />
           {formEntreprise.logo && (
             <div className="form-inline">
-              <img src={formEntreprise.logo} alt="Apercu du logo" className="logo-apercu" />
+              <img src={formEntreprise.logo} alt={t('parametres.logo')} className="logo-apercu" />
               <button type="button" className="secondary" onClick={supprimerLogo}>
-                Retirer le logo
+                {t('parametres.retirerLogo')}
               </button>
             </div>
           )}
         </div>
-        <button type="submit">Enregistrer les informations de la societe</button>
+        <button type="submit">{t('parametres.enregistrerSociete')}</button>
       </form>
 
-      <h3>Regles de calcul</h3>
+      <h3>{t('parametres.reglesCalculTitre')}</h3>
       <form className="form-parametres" onSubmit={enregistrerParametres}>
         {CHAMPS_PARAMETRES.map((champ) => (
           <label key={champ.cle} className="champ-parametre">
@@ -244,34 +238,28 @@ export default function Parametres() {
             />
           </label>
         ))}
-        <button type="submit">Enregistrer les parametres</button>
+        <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
 
-      <h3>Restriction IP pour le pointage "Bureau"</h3>
-      <p className="aide">
-        IP publique(s) du bureau, separees par des virgules (ex: 88.12.34.56). Un employe qui pointe
-        en indiquant "Bureau" devra se connecter depuis l'une de ces IP; le pointage "Domicile" n'est
-        jamais restreint. Laissez vide pour desactiver la verification.
-      </p>
+      <h3>{t('parametres.restrictionIpTitre')}</h3>
+      <p className="aide">{t('parametres.restrictionIpAide')}</p>
       <form className="form-inline" onSubmit={enregistrerParametres}>
         <input
           placeholder="Ex: 88.12.34.56"
           value={parametres.ip_bureau}
           onChange={(e) => handleParametreChange('ip_bureau', e.target.value)}
         />
-        <button type="submit">Enregistrer les parametres</button>
+        <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
 
-      <h3>Bareme des conges annuels par anciennete</h3>
-      <p className="aide">
-        A partir de combien d'annees d'anciennete l'employe acquiert-il ce nombre de jours par an ?
-      </p>
+      <h3>{t('parametres.baremeTitre')}</h3>
+      <p className="aide">{t('parametres.baremeAide')}</p>
       <form onSubmit={enregistrerBareme}>
         <table>
           <thead>
             <tr>
-              <th>Anciennete (annees)</th>
-              <th>Jours de conges / an</th>
+              <th>{t('parametres.colAnciennete')}</th>
+              <th>{t('parametres.colJoursParAn')}</th>
               <th></th>
             </tr>
           </thead>
@@ -297,7 +285,7 @@ export default function Parametres() {
                 </td>
                 <td>
                   <button type="button" className="danger" onClick={() => supprimerLigneBareme(index)}>
-                    Supprimer
+                    {t('common.delete')}
                   </button>
                 </td>
               </tr>
@@ -306,16 +294,16 @@ export default function Parametres() {
         </table>
         <div className="actions-bareme">
           <button type="button" className="secondary" onClick={ajouterLigneBareme}>
-            Ajouter une ligne
+            {t('parametres.ajouterLigne')}
           </button>
-          <button type="submit">Enregistrer le bareme</button>
+          <button type="submit">{t('parametres.enregistrerBareme')}</button>
         </div>
       </form>
 
-      <h3>Jours feries payes</h3>
+      <h3>{t('parametres.feriesTitre')}</h3>
       <div className="form-inline">
         <label>
-          Annee:{' '}
+          {t('parametres.anneeLabel')}{' '}
           <input type="number" value={annee} onChange={(e) => setAnnee(e.target.value)} />
         </label>
       </div>
@@ -327,19 +315,19 @@ export default function Parametres() {
           required
         />
         <input
-          placeholder="Nom du jour ferie"
+          placeholder={t('parametres.nomJourFeriePlaceholder')}
           value={nouvelleFerie.nom}
           onChange={(e) => setNouvelleFerie({ ...nouvelleFerie, nom: e.target.value })}
           required
         />
-        <button type="submit">Ajouter</button>
+        <button type="submit">{t('common.add')}</button>
       </form>
 
       <table>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Nom</th>
+            <th>{t('parametres.colDate')}</th>
+            <th>{t('parametres.colNom')}</th>
             <th></th>
           </tr>
         </thead>
@@ -350,7 +338,7 @@ export default function Parametres() {
               <td>{f.nom}</td>
               <td className="actions">
                 <button className="danger" onClick={() => supprimerFerie(f.id)}>
-                  Supprimer
+                  {t('common.delete')}
                 </button>
               </td>
             </tr>
@@ -358,7 +346,7 @@ export default function Parametres() {
           {feries.length === 0 && (
             <tr>
               <td colSpan={3} className="vide">
-                Aucun jour ferie enregistre pour {annee}
+                {t('parametres.aucunFerie', { annee })}
               </td>
             </tr>
           )}

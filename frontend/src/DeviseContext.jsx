@@ -1,9 +1,9 @@
 import { createContext, useContext, useState } from 'react';
 
 export const DEVISES = [
-  { code: 'EUR', symbole: '€', label: 'Euro (EUR)' },
-  { code: 'USD', symbole: '$', label: 'Dollar americain (USD)' },
-  { code: 'ILS', symbole: '₪', label: 'Shekel (ILS)' },
+  { code: 'EUR', symbole: '€' },
+  { code: 'USD', symbole: '$' },
+  { code: 'ILS', symbole: '₪' },
 ];
 
 const CLE_STOCKAGE = 'pointeuse_devise';

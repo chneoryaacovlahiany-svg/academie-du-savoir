@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../AuthContext.jsx';
+import { useLangue, LANGUES } from '../LangueContext.jsx';
 
 export default function Login() {
   const { connecter } = useAuth();
+  const { t, langue, changerLangue } = useLangue();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [erreur, setErreur] = useState('');
@@ -20,19 +22,28 @@ export default function Login() {
   return (
     <div className="app app-login">
       <div className="panel panel-login">
-        <h2>Connexion</h2>
-        <p className="subtitle">Pointeuse - acces reserve</p>
+        <label className="selecteur-devise selecteur-langue-login">
+          <select value={langue} onChange={(e) => changerLangue(e.target.value)}>
+            {LANGUES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <h2>{t('login.title')}</h2>
+        <p className="subtitle">{t('login.subtitle')}</p>
         {erreur && <p className="erreur">{erreur}</p>}
         <form className="form-connexion" onSubmit={handleSubmit}>
           <label>
-            Identifiant
+            {t('login.identifiant')}
             <input value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
           </label>
           <label>
-            Mot de passe
+            {t('login.motDePasse')}
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </label>
-          <button type="submit">Se connecter</button>
+          <button type="submit">{t('login.seConnecter')}</button>
         </form>
       </div>
     </div>

@@ -13,49 +13,46 @@ import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 import { useAuth } from './AuthContext.jsx';
 import { EntrepriseProvider, useEntreprise } from './EntrepriseContext.jsx';
+import { useLangue, LANGUES } from './LangueContext.jsx';
 
-const ONGLETS_ADMIN = [
-  { id: 'dashboard', label: 'Tableau de bord' },
-  { id: 'pointage', label: 'Pointage' },
-  { id: 'calendrier', label: 'Calendrier' },
-  { id: 'employes', label: 'Employes' },
-  { id: 'conges', label: 'Conges' },
-  { id: 'rapport', label: 'Rapport & Paie' },
-  { id: 'parametres', label: 'Parametres' },
-  { id: 'comptes', label: 'Comptes' },
-  { id: 'mon-compte', label: 'Mon compte' },
-];
-
-const ONGLETS_EMPLOYE = [
-  { id: 'pointage', label: 'Pointage' },
-  { id: 'calendrier', label: 'Calendrier' },
-  { id: 'conges', label: 'Conges' },
-  { id: 'mon-compte', label: 'Mon compte' },
-];
+const CLES_DEVISE = { EUR: 'deviseEuro', USD: 'deviseDollar', ILS: 'deviseShekel' };
 
 function EnteteApp() {
   const { entreprise } = useEntreprise();
   const { devise, changerDevise } = useDevise();
+  const { t, langue, changerLangue } = useLangue();
 
   return (
     <header className="app-header">
       <div className="app-header-identite">
         {entreprise.logo && <img src={entreprise.logo} alt="Logo" className="app-header-logo" />}
         <div>
-          <h1>{entreprise.nom || 'Pointeuse'}</h1>
-          <p className="subtitle">Suivi des horaires, conges et paie des employes</p>
+          <h1>{entreprise.nom || t('header.appName')}</h1>
+          <p className="subtitle">{t('header.subtitle')}</p>
         </div>
       </div>
-      <label className="selecteur-devise">
-        Devise:{' '}
-        <select value={devise.code} onChange={(e) => changerDevise(e.target.value)}>
-          {DEVISES.map((d) => (
-            <option key={d.code} value={d.code}>
-              {d.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="selecteurs-header">
+        <label className="selecteur-devise">
+          {t('header.langue')}{' '}
+          <select value={langue} onChange={(e) => changerLangue(e.target.value)}>
+            {LANGUES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="selecteur-devise">
+          {t('header.devise')}{' '}
+          <select value={devise.code} onChange={(e) => changerDevise(e.target.value)}>
+            {DEVISES.map((d) => (
+              <option key={d.code} value={d.code}>
+                {t(`common.${CLES_DEVISE[d.code]}`)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
     </header>
   );
 }
@@ -63,9 +60,29 @@ function EnteteApp() {
 export default function App() {
   const { user, chargement } = useAuth();
   const [onglet, setOnglet] = useState('dashboard');
+  const { t } = useLangue();
+
+  const ONGLETS_ADMIN = [
+    { id: 'dashboard', label: t('tabs.dashboard') },
+    { id: 'pointage', label: t('tabs.pointage') },
+    { id: 'calendrier', label: t('tabs.calendrier') },
+    { id: 'employes', label: t('tabs.employes') },
+    { id: 'conges', label: t('tabs.conges') },
+    { id: 'rapport', label: t('tabs.rapport') },
+    { id: 'parametres', label: t('tabs.parametres') },
+    { id: 'comptes', label: t('tabs.comptes') },
+    { id: 'mon-compte', label: t('tabs.monCompte') },
+  ];
+
+  const ONGLETS_EMPLOYE = [
+    { id: 'pointage', label: t('tabs.pointage') },
+    { id: 'calendrier', label: t('tabs.calendrier') },
+    { id: 'conges', label: t('tabs.conges') },
+    { id: 'mon-compte', label: t('tabs.monCompte') },
+  ];
 
   if (chargement) {
-    return <div className="app">Chargement...</div>;
+    return <div className="app">{t('common.loading')}</div>;
   }
 
   if (!user) {
