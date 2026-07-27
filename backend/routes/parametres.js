@@ -12,7 +12,11 @@ const CLES_CONNUES = [
   'majoration_heures_sup_150',
   'plafond_conges_maladie',
   'accumulation_maladie_mois',
+  'retards_tolerance_minutes',
+  'retards_plafond_mensuel_minutes',
 ];
+
+const CLES_BOOLEENNES = ['retards_actif', 'retards_plafond_mensuel_actif', 'retards_rattrapage_actif'];
 
 // Une ou plusieurs IP separees par des virgules (ex: "88.12.34.56, 88.12.34.57").
 function ipBureauValide(valeur) {
@@ -43,6 +47,11 @@ router.put('/', (req, res) => {
       return res.status(400).json({ error: 'Valeur invalide pour ip_bureau (IPv4, separees par des virgules)' });
     }
     maj.run('ip_bureau', req.body.ip_bureau.trim());
+  }
+  for (const cle of CLES_BOOLEENNES) {
+    if (req.body[cle] !== undefined) {
+      maj.run(cle, req.body[cle] ? '1' : '0');
+    }
   }
   res.json(chargerParametres());
 });

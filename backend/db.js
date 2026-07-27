@@ -134,6 +134,11 @@ const parametresDefaut = {
   plafond_conges_maladie: '90',
   accumulation_maladie_mois: '1.5',
   ip_bureau: '',
+  retards_actif: '0',
+  retards_tolerance_minutes: '15',
+  retards_plafond_mensuel_actif: '0',
+  retards_plafond_mensuel_minutes: '120',
+  retards_rattrapage_actif: '0',
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {

@@ -108,6 +108,10 @@ export default function Parametres() {
     setParametres({ ...parametres, [cle]: valeur });
   };
 
+  const handleParametreCaseChange = (cle, coche) => {
+    setParametres({ ...parametres, [cle]: coche });
+  };
+
   const enregistrerParametres = async (e) => {
     e.preventDefault();
     setErreur('');
@@ -245,6 +249,56 @@ export default function Parametres() {
             />
           </label>
         ))}
+        <button type="submit">{t('parametres.enregistrerParametres')}</button>
+      </form>
+
+      <h3>{t('parametres.retardsTitre')}</h3>
+      <p className="aide">{t('parametres.retardsAide')}</p>
+      <form className="form-parametres" onSubmit={enregistrerParametres}>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.retards_actif}
+            onChange={(e) => handleParametreCaseChange('retards_actif', e.target.checked)}
+          />
+          {t('parametres.retardsActifLabel')}
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.retardsToleranceLabel')}
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={parametres.retards_tolerance_minutes}
+            onChange={(e) => handleParametreChange('retards_tolerance_minutes', e.target.value)}
+          />
+        </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.retards_rattrapage_actif}
+            onChange={(e) => handleParametreCaseChange('retards_rattrapage_actif', e.target.checked)}
+          />
+          {t('parametres.retardsRattrapageLabel')}
+        </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.retards_plafond_mensuel_actif}
+            onChange={(e) => handleParametreCaseChange('retards_plafond_mensuel_actif', e.target.checked)}
+          />
+          {t('parametres.retardsPlafondActifLabel')}
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.retardsPlafondMinutesLabel')}
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={parametres.retards_plafond_mensuel_minutes}
+            onChange={(e) => handleParametreChange('retards_plafond_mensuel_minutes', e.target.value)}
+          />
+        </label>
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
 

@@ -118,7 +118,22 @@ router.get('/', (req, res) => {
     // et exclut les jours de conge/maladie approuves et les jours feries.
     // Calcule pour tous les types de paie (utile pour le reperer dans le
     // Calendrier); seul le salaire fixe le deduit reellement du montant.
-    const joursManquants = [];
+    //
+    // Si le suivi des retards/departs anticipes est actif (Parametres), une
+    // tolerance (en minutes) est appliquee jour par jour: en-dessous, l'ecart
+    // ne compte pas; au-dessus, il compte en entier (pas seulement le
+    // depassement). Le rattrapage, si actif, calcule l'ecart en compensant
+    // retard et depart anticipe au sein de la meme journee (equivalent a
+    // considerer l'employe comme ayant droit aux heures sup pour ce calcul
+    // uniquement, quel que soit son reglage individuel). Un plafond mensuel
+    // cumule peut aussi faire sauter la tolerance pour tout le mois.
+    const retardsActif = !!params.retards_actif;
+    const rattrapageActif = !!params.retards_rattrapage_actif;
+    const toleranceMinutes = params.retards_tolerance_minutes || 0;
+    const plafondMensuelActif = !!params.retards_plafond_mensuel_actif;
+    const plafondMensuelMinutes = params.retards_plafond_mensuel_minutes || 0;
+
+    const ecartsBrutsParDate = {};
     if (horaires.length > 0) {
       for (const p of pointages) {
         if (p.heures_travaillees == null) continue;
@@ -129,17 +144,31 @@ router.get('/', (req, res) => {
 
         const heuresPrevues = heuresPrevuesJour(horaireJour.heure_debut, horaireJour.heure_fin, pauseMinutes, horaireJour.pause_appliquee);
         if (heuresPrevues <= 0) continue;
-        const ecart = Math.max(0, heuresPrevues - heuresEffectivesParDate[p.date]);
+        const heuresEffectivesPourEcart = retardsActif
+          ? heuresEffectivesJour(p, horaireJour, rattrapageActif, pauseMinutes)
+          : heuresEffectivesParDate[p.date];
+        const ecart = Math.max(0, heuresPrevues - heuresEffectivesPourEcart);
         if (ecart > 0.001) {
-          joursManquants.push({
-            date: p.date,
-            heures_prevues: Math.round(heuresPrevues * 100) / 100,
-            heures_effectives: Math.round(heuresEffectivesParDate[p.date] * 100) / 100,
-            ecart: Math.round(ecart * 100) / 100,
-          });
+          ecartsBrutsParDate[p.date] = { heuresPrevues, ecart };
         }
       }
     }
+
+    const totalBrutMinutes = Object.values(ecartsBrutsParDate).reduce((acc, j) => acc + j.ecart * 60, 0);
+    const plafondMensuelDepasse = retardsActif && plafondMensuelActif && totalBrutMinutes > plafondMensuelMinutes;
+
+    const joursManquants = [];
+    for (const [date, { heuresPrevues, ecart }] of Object.entries(ecartsBrutsParDate)) {
+      const compte = !retardsActif || plafondMensuelDepasse || ecart * 60 > toleranceMinutes;
+      if (!compte) continue;
+      joursManquants.push({
+        date,
+        heures_prevues: Math.round(heuresPrevues * 100) / 100,
+        heures_effectives: Math.round((heuresPrevues - ecart) * 100) / 100,
+        ecart: Math.round(ecart * 100) / 100,
+      });
+    }
+    joursManquants.sort((a, b) => (a.date < b.date ? -1 : 1));
     const heuresManquantesTotal = joursManquants.reduce((acc, j) => acc + j.ecart, 0);
     const montantDeduction = estMensuel ? heuresManquantesTotal * emp.taux_horaire : 0;
     const heuresManquantes = estMensuel ? heuresManquantesTotal : 0;
@@ -194,6 +223,7 @@ router.get('/', (req, res) => {
       solde_maladie_disponible: Math.round(soldeMaladie(emp, fin) * 100) / 100,
       heures_manquantes: Math.round(heuresManquantes * 100) / 100,
       jours_manquants: joursManquants,
+      retards_plafond_mensuel_depasse: plafondMensuelDepasse,
       montant_travail: Math.round(montantTravail * 100) / 100,
       montant_conges: Math.round(montantConges * 100) / 100,
       montant_maladie: Math.round(montantMaladie * 100) / 100,

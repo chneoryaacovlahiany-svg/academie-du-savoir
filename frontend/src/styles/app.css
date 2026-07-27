@@ -137,6 +137,16 @@ body {
   margin-top: 2px;
 }
 
+.champ-case {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.champ-case input {
+  margin-top: 0;
+}
+
 .aide {
   color: #6b7280;
   font-size: 13px;
