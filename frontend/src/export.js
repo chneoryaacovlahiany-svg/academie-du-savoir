@@ -122,7 +122,7 @@ export function exporterPDF(nomFichier, titre, entetes, lignes, options = {}) {
   const entreprise = options.entreprise;
   const largeurPage = doc.internal.pageSize.getWidth();
   const marge = 14;
-  const tailleLogo = 20;
+  const tailleLogo = 30;
   let curseurY = 15;
   let basLogoY = 0;
 

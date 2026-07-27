@@ -3,7 +3,7 @@ import { api } from '../api';
 import { useEntreprise } from '../EntrepriseContext.jsx';
 import { useLangue } from '../LangueContext.jsx';
 
-const TAILLE_MAX_LOGO = 240;
+const TAILLE_MAX_LOGO = 360;
 
 export default function Parametres() {
   const { entreprise, rafraichirEntreprise } = useEntreprise();
@@ -35,6 +35,13 @@ export default function Parametres() {
           canvas.width = largeur;
           canvas.height = hauteur;
           const ctx = canvas.getContext('2d');
+          // Aplati une eventuelle transparence sur fond blanc: certains
+          // lecteurs PDF (dont jsPDF) affichent un damier ou des artefacts de
+          // compression avec les logos transparents; le fond blanc convient
+          // de toute facon a l'entete de l'appli et des exports, qui sont
+          // deja sur fond blanc.
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, largeur, hauteur);
           ctx.drawImage(image, 0, 0, largeur, hauteur);
           resolve(canvas.toDataURL('image/png'));
         };
