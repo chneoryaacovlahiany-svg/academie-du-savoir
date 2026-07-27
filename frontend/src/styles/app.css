@@ -307,6 +307,25 @@ tbody tr:hover {
   margin-top: -10px;
 }
 
+.navigation-periode {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.navigation-periode select {
+  min-width: 110px;
+}
+
+.libelle-periode {
+  font-weight: 600;
+  color: #1e3a8a;
+  min-width: 200px;
+  text-align: center;
+}
+
 .cartes-pointage {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
