@@ -31,6 +31,8 @@ const CLES_BOOLEENNES = [
   'avertissements_retards_actif',
 ];
 
+const CLES_MESSAGES_AVERTISSEMENT = [1, 2, 3, 4, 5].map((n) => `avertissements_retards_message_${n}`);
+
 // Une ou plusieurs IP separees par des virgules (ex: "88.12.34.56, 88.12.34.57").
 function ipBureauValide(valeur) {
   if (valeur.trim() === '') return true;
@@ -75,6 +77,15 @@ router.put('/', (req, res) => {
       return res.status(400).json({ error: 'Valeur invalide pour notif_sortie_options_report (minutes entieres separees par des virgules)' });
     }
     maj.run('notif_sortie_options_report', req.body.notif_sortie_options_report.trim());
+  }
+  for (const cle of CLES_MESSAGES_AVERTISSEMENT) {
+    if (req.body[cle] !== undefined) {
+      const valeur = String(req.body[cle]).trim();
+      if (!valeur) {
+        return res.status(400).json({ error: `Le message ne peut pas etre vide (${cle})` });
+      }
+      maj.run(cle, valeur);
+    }
   }
   for (const cle of CLES_BOOLEENNES) {
     if (req.body[cle] !== undefined) {

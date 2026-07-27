@@ -101,4 +101,7 @@ export const api = {
   enregistrerAbonnementPush: (subscription, employee_id) =>
     request('/push/abonnement', { method: 'POST', body: JSON.stringify({ ...subscription.toJSON(), employee_id }) }),
   supprimerAbonnementPush: (endpoint) => request('/push/abonnement', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
+
+  // Historique des avertissements automatiques pour retards
+  getAvertissements: () => request('/avertissements'),
 };

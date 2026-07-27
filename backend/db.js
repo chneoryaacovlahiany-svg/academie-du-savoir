@@ -116,6 +116,15 @@ db.exec(`
     niveau_envoye INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (employee_id, mois)
   );
+
+  CREATE TABLE IF NOT EXISTS avertissements_historique (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    mois TEXT NOT NULL,
+    niveau INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    date_envoi TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);
@@ -174,6 +183,16 @@ const parametresDefaut = {
   notif_sortie_options_report: '20,30,40',
   avertissements_retards_actif: '0',
   avertissements_retards_seuil: '3',
+  avertissements_retards_message_1:
+    "Nous avons remarque plusieurs retards ou departs anticipes ce mois-ci. Merci d'etre attentif a votre ponctualite.",
+  avertissements_retards_message_2:
+    'Vos retards ou departs anticipes se repetent ce mois-ci. Nous vous demandons de veiller a respecter vos horaires.',
+  avertissements_retards_message_3:
+    'Le nombre de retards ou departs anticipes ce mois-ci devient preoccupant. Merci de corriger rapidement la situation.',
+  avertissements_retards_message_4:
+    "Vos retards ou departs anticipes repetes posent un probleme serieux. Si la situation ne s'ameliore pas, des mesures pourront etre prises.",
+  avertissements_retards_message_5:
+    "Dernier avertissement: vos retards ou departs anticipes repetes constituent un manquement grave a vos obligations. Sans amelioration immediate, des sanctions disciplinaires, pouvant aller jusqu'a la rupture du contrat, pourront etre engagees.",
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {

@@ -6,7 +6,15 @@ function chargerBareme() {
 }
 
 // Parametres textuels (ex: liste d'IP), a ne pas convertir en nombre.
-const CLES_TEXTE = new Set(['ip_bureau', 'notif_sortie_options_report']);
+const CLES_TEXTE = new Set([
+  'ip_bureau',
+  'notif_sortie_options_report',
+  'avertissements_retards_message_1',
+  'avertissements_retards_message_2',
+  'avertissements_retards_message_3',
+  'avertissements_retards_message_4',
+  'avertissements_retards_message_5',
+]);
 
 function chargerParametres() {
   const rows = db.prepare('SELECT * FROM parametres').all();

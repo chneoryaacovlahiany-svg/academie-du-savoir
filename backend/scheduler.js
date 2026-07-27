@@ -5,18 +5,7 @@ const { chargerParametres } = require('./soldes');
 const { calculerJoursManquants } = require('./retards');
 
 const INTERVALLE_VERIFICATION_MS = 60000;
-
-// Messages des 5 niveaux d'avertissement pour retards/departs anticipes
-// repetes, du plus mesure au plus severe: le ton monte pour exprimer les
-// enjeux, le mecontentement et le risque encouru (jusqu'a evoquer une
-// sanction disciplinaire au dernier niveau).
-const MESSAGES_AVERTISSEMENT_RETARDS = [
-  "Nous avons remarque plusieurs retards ou departs anticipes ce mois-ci. Merci d'etre attentif a votre ponctualite.",
-  'Vos retards ou departs anticipes se repetent ce mois-ci. Nous vous demandons de veiller a respecter vos horaires.',
-  'Le nombre de retards ou departs anticipes ce mois-ci devient preoccupant. Merci de corriger rapidement la situation.',
-  'Vos retards ou departs anticipes repetes posent un probleme serieux. Si la situation ne s\'ameliore pas, des mesures pourront etre prises.',
-  "Dernier avertissement: vos retards ou departs anticipes repetes constituent un manquement grave a vos obligations. Sans amelioration immediate, des sanctions disciplinaires, pouvant aller jusqu'a la rupture du contrat, pourront etre engagees.",
-];
+const NB_NIVEAUX_AVERTISSEMENT = 5;
 
 async function envoyerPush(sub, payload) {
   try {
@@ -186,16 +175,17 @@ async function calculerEtEnvoyerAvertissements() {
     if (subs.length === 0) continue;
 
     const { joursManquants } = calculerJoursManquants(emp.id, debut, fin);
-    const niveauAtteint = Math.min(MESSAGES_AVERTISSEMENT_RETARDS.length, Math.floor(joursManquants.length / seuil));
+    const niveauAtteint = Math.min(NB_NIVEAUX_AVERTISSEMENT, Math.floor(joursManquants.length / seuil));
     if (niveauAtteint <= 0) continue;
 
     const etat = db.prepare('SELECT * FROM avertissements_etat WHERE employee_id = ? AND mois = ?').get(emp.id, mois);
     const niveauDejaEnvoye = etat ? etat.niveau_envoye : 0;
     if (niveauAtteint <= niveauDejaEnvoye) continue;
 
+    const corps = params[`avertissements_retards_message_${niveauAtteint}`];
     const payload = JSON.stringify({
       titre: 'Pointeuse',
-      corps: MESSAGES_AVERTISSEMENT_RETARDS[niveauAtteint - 1],
+      corps,
       tag: `avertissement_retard-${emp.id}-${mois}`,
       type: 'avertissement_retard',
       employeeId: emp.id,
@@ -208,6 +198,13 @@ async function calculerEtEnvoyerAvertissements() {
       `INSERT INTO avertissements_etat (employee_id, mois, niveau_envoye) VALUES (?, ?, ?)
        ON CONFLICT(employee_id, mois) DO UPDATE SET niveau_envoye = excluded.niveau_envoye`
     ).run(emp.id, mois, niveauAtteint);
+
+    db.prepare('INSERT INTO avertissements_historique (employee_id, mois, niveau, message) VALUES (?, ?, ?, ?)').run(
+      emp.id,
+      mois,
+      niveauAtteint,
+      corps
+    );
   }
 }
 

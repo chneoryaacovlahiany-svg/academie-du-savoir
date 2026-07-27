@@ -7,10 +7,11 @@ const TAILLE_MAX_LOGO = 360;
 
 export default function Parametres() {
   const { entreprise, rafraichirEntreprise } = useEntreprise();
-  const { t } = useLangue();
+  const { t, locale } = useLangue();
   const [parametres, setParametres] = useState(null);
   const [bareme, setBareme] = useState([]);
   const [feries, setFeries] = useState([]);
+  const [avertissements, setAvertissements] = useState([]);
   const [nouvelleFerie, setNouvelleFerie] = useState({ date: '', nom: '' });
   const [annee, setAnnee] = useState(String(new Date().getFullYear()));
   const [message, setMessage] = useState('');
@@ -94,10 +95,11 @@ export default function Parametres() {
   };
 
   const charger = async () => {
-    const [p, b, f] = await Promise.all([api.getParametres(), api.getBareme(), api.getFeries(annee)]);
+    const [p, b, f, a] = await Promise.all([api.getParametres(), api.getBareme(), api.getFeries(annee), api.getAvertissements()]);
     setParametres(p);
     setBareme(b);
     setFeries(f);
+    setAvertissements(a);
   };
 
   useEffect(() => {
@@ -404,8 +406,47 @@ export default function Parametres() {
             onChange={(e) => handleParametreChange('avertissements_retards_seuil', e.target.value)}
           />
         </label>
+        {[1, 2, 3, 4, 5].map((niveau) => (
+          <label key={niveau} className="champ-parametre champ-pleine-largeur">
+            {t('parametres.avertissementsRetardsMessageLabel', { niveau })}
+            <textarea
+              rows={2}
+              value={parametres[`avertissements_retards_message_${niveau}`]}
+              onChange={(e) => handleParametreChange(`avertissements_retards_message_${niveau}`, e.target.value)}
+            />
+          </label>
+        ))}
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
+
+      <h4>{t('parametres.avertissementsHistoriqueTitre')}</h4>
+      <table>
+        <thead>
+          <tr>
+            <th>{t('parametres.colDateEnvoi')}</th>
+            <th>{t('parametres.colEmploye')}</th>
+            <th>{t('parametres.colNiveau')}</th>
+            <th>{t('parametres.colMessage')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {avertissements.map((a) => (
+            <tr key={a.id}>
+              <td>{new Date(a.date_envoi.replace(' ', 'T') + 'Z').toLocaleString(locale)}</td>
+              <td>{a.prenom} {a.nom}</td>
+              <td>{a.niveau}</td>
+              <td>{a.message}</td>
+            </tr>
+          ))}
+          {avertissements.length === 0 && (
+            <tr>
+              <td colSpan={4} className="vide">
+                {t('parametres.aucunAvertissement')}
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
 
       <h3>{t('parametres.restrictionIpTitre')}</h3>
       <p className="aide">{t('parametres.restrictionIpAide')}</p>

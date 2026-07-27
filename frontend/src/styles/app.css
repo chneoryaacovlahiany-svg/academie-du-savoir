@@ -147,6 +147,17 @@ body {
   margin-top: 0;
 }
 
+.champ-pleine-largeur {
+  grid-column: 1 / -1;
+}
+
+.champ-pleine-largeur textarea {
+  margin-top: 2px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+}
+
 .aide {
   color: #6b7280;
   font-size: 13px;

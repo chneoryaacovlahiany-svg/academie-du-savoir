@@ -20,6 +20,7 @@ const dashboardRouter = require('./routes/dashboard');
 const horairesRouter = require('./routes/horaires');
 const entrepriseRouter = require('./routes/entreprise');
 const pushRouter = require('./routes/push');
+const avertissementsRouter = require('./routes/avertissements');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -48,6 +49,7 @@ app.use('/api/dashboard', requireAuth, requireAdmin, dashboardRouter);
 app.use('/api/horaires', requireAuth, horairesRouter);
 app.use('/api/entreprise', requireAuth, entrepriseRouter);
 app.use('/api/push', requireAuth, pushRouter);
+app.use('/api/avertissements', requireAuth, requireAdmin, avertissementsRouter);
 
 // En production, le build du frontend (frontend/dist) est servi directement
 // par ce meme serveur: un seul service a heberger, meme origine que l'API
