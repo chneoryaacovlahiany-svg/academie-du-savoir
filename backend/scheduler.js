@@ -16,7 +16,17 @@ async function envoyerPush(sub, payload) {
       // Abonnement perime (app desinstallee, permission revoquee...): on l'oublie.
       db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(sub.id);
     } else {
-      console.error('Erreur envoi notification push:', err.message);
+      // err.body contient souvent la raison exacte du refus (ex: cle VAPID
+      // invalide, aud incorrect, payload trop volumineux...), utile pour
+      // diagnostiquer les echecs specifiques a certains services (Apple Web
+      // Push notamment), que le message generique de la librairie ne donne pas.
+      console.error(
+        'Erreur envoi notification push:',
+        'statusCode=', err.statusCode,
+        'endpoint=', sub.endpoint,
+        'body=', err.body,
+        'message=', err.message
+      );
     }
   }
 }
