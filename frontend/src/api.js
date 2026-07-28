@@ -104,4 +104,6 @@ export const api = {
 
   // Historique des avertissements automatiques pour retards
   getAvertissements: () => request('/avertissements'),
+  envoyerAvertissement: (employee_id, niveau, message) =>
+    request('/avertissements/envoyer', { method: 'POST', body: JSON.stringify({ employee_id, niveau, message }) }),
 };

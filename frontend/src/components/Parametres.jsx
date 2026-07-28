@@ -12,6 +12,10 @@ export default function Parametres() {
   const [bareme, setBareme] = useState([]);
   const [feries, setFeries] = useState([]);
   const [avertissements, setAvertissements] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [envoiManuel, setEnvoiManuel] = useState({ employee_id: '', niveau: 1, message: '' });
+  const [messageEnvoiManuel, setMessageEnvoiManuel] = useState('');
+  const [erreurEnvoiManuel, setErreurEnvoiManuel] = useState('');
   const [nouvelleFerie, setNouvelleFerie] = useState({ date: '', nom: '' });
   const [annee, setAnnee] = useState(String(new Date().getFullYear()));
   const [message, setMessage] = useState('');
@@ -107,16 +111,29 @@ export default function Parametres() {
   };
 
   const charger = async () => {
-    const [p, b, f, a] = await Promise.all([api.getParametres(), api.getBareme(), api.getFeries(annee), api.getAvertissements()]);
+    const [p, b, f, a, e] = await Promise.all([
+      api.getParametres(),
+      api.getBareme(),
+      api.getFeries(annee),
+      api.getAvertissements(),
+      api.getEmployees(),
+    ]);
     setParametres(p);
     setBareme(b);
     setFeries(f);
     setAvertissements(a);
+    setEmployees(e.filter((emp) => emp.actif));
   };
 
   useEffect(() => {
     charger();
   }, [annee]);
+
+  useEffect(() => {
+    if (parametres && !envoiManuel.message) {
+      setEnvoiManuel((e) => ({ ...e, message: parametres[`avertissements_retards_message_${e.niveau}`] }));
+    }
+  }, [parametres]);
 
   const handleParametreChange = (cle, valeur) => {
     setParametres({ ...parametres, [cle]: valeur });
@@ -124,6 +141,31 @@ export default function Parametres() {
 
   const handleParametreCaseChange = (cle, coche) => {
     setParametres({ ...parametres, [cle]: coche });
+  };
+
+  const handleNiveauEnvoiManuelChange = (niveau) => {
+    setEnvoiManuel({
+      ...envoiManuel,
+      niveau,
+      message: parametres[`avertissements_retards_message_${niveau}`],
+    });
+  };
+
+  const envoyerAvertissementManuel = async (e) => {
+    e.preventDefault();
+    setErreurEnvoiManuel('');
+    setMessageEnvoiManuel('');
+    try {
+      const resultat = await api.envoyerAvertissement(envoiManuel.employee_id, envoiManuel.niveau, envoiManuel.message);
+      setMessageEnvoiManuel(
+        resultat.nb_appareils > 0
+          ? t('parametres.avertissementEnvoye', { n: resultat.nb_appareils })
+          : t('parametres.avertissementEnvoyeSansAppareil')
+      );
+      charger();
+    } catch (err) {
+      setErreurEnvoiManuel(err.message);
+    }
   };
 
   const enregistrerParametres = async (e) => {
@@ -460,6 +502,50 @@ export default function Parametres() {
           </label>
         ))}
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
+      </form>
+
+      <h4>{t('parametres.envoiManuelTitre')}</h4>
+      <p className="aide">{t('parametres.envoiManuelAide')}</p>
+      {erreurEnvoiManuel && <p className="erreur">{erreurEnvoiManuel}</p>}
+      {messageEnvoiManuel && <p className="confirmation">{messageEnvoiManuel}</p>}
+      <form className="form-parametres" onSubmit={envoyerAvertissementManuel}>
+        <label className="champ-parametre">
+          {t('parametres.envoiManuelEmployeLabel')}
+          <select
+            value={envoiManuel.employee_id}
+            onChange={(e) => setEnvoiManuel({ ...envoiManuel, employee_id: e.target.value })}
+            required
+          >
+            <option value="" disabled>
+              {t('parametres.envoiManuelChoisirEmploye')}
+            </option>
+            {employees.map((emp) => (
+              <option key={emp.id} value={emp.id}>
+                {emp.prenom} {emp.nom}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="champ-parametre">
+          {t('parametres.envoiManuelNiveauLabel')}
+          <select value={envoiManuel.niveau} onChange={(e) => handleNiveauEnvoiManuelChange(Number(e.target.value))}>
+            {[1, 2, 3, 4, 5].map((niveau) => (
+              <option key={niveau} value={niveau}>
+                {niveau}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="champ-parametre champ-pleine-largeur">
+          {t('parametres.envoiManuelMessageLabel')}
+          <textarea
+            rows={2}
+            value={envoiManuel.message}
+            onChange={(e) => setEnvoiManuel({ ...envoiManuel, message: e.target.value })}
+            required
+          />
+        </label>
+        <button type="submit">{t('parametres.envoiManuelBouton')}</button>
       </form>
 
       <h4>{t('parametres.avertissementsHistoriqueTitre')}</h4>

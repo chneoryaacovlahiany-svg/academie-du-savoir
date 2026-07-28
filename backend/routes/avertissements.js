@@ -1,5 +1,7 @@
 const express = require('express');
 const db = require('../db');
+const { requireAdmin } = require('../middleware/auth');
+const { envoyerAvertissementManuel, NB_NIVEAUX_AVERTISSEMENT } = require('../scheduler');
 
 const router = express.Router();
 
@@ -25,6 +27,24 @@ router.get('/', (req, res) => {
   }
   requete += ' ORDER BY h.date_envoi DESC LIMIT 200';
   res.json(db.prepare(requete).all(...params));
+});
+
+// Envoi manuel d'un avertissement, decide par l'admin, independamment du
+// declenchement automatique par seuil de retards.
+router.post('/envoyer', requireAdmin, async (req, res) => {
+  const { employee_id, niveau, message } = req.body;
+  const niveauNombre = Number(niveau);
+  if (!employee_id || !Number.isInteger(niveauNombre) || niveauNombre < 1 || niveauNombre > NB_NIVEAUX_AVERTISSEMENT) {
+    return res.status(400).json({ error: `Parametres invalides (niveau entre 1 et ${NB_NIVEAUX_AVERTISSEMENT})` });
+  }
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'Message requis' });
+  }
+  const emp = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
+  if (!emp) return res.status(404).json({ error: 'Employe introuvable' });
+
+  const { nbAppareils } = await envoyerAvertissementManuel(employee_id, niveauNombre, message.trim());
+  res.status(201).json({ ok: true, nb_appareils: nbAppareils });
 });
 
 module.exports = router;

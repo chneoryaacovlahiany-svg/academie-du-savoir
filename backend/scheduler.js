@@ -219,6 +219,41 @@ async function verifierAvertissementsRetards() {
   await calculerEtEnvoyerAvertissements();
 }
 
+// Envoi manuel, decide par l'admin, d'un avertissement a un employe donne
+// (independamment du declenchement automatique par seuil). Enregistre dans
+// le meme historique et met a jour le palier atteint ce mois-ci (au maximum
+// du palier deja atteint automatiquement et de celui envoye manuellement),
+// pour que le suivi automatique ne renvoie pas ensuite un palier deja couvert.
+async function envoyerAvertissementManuel(employeeId, niveau, message) {
+  const subs = db.prepare('SELECT * FROM push_subscriptions WHERE employee_id = ?').all(employeeId);
+  const mois = dateLocale().slice(0, 7);
+
+  const payload = JSON.stringify({
+    titre: 'Pointeuse',
+    corps: message,
+    tag: `avertissement_retard-manuel-${employeeId}-${Date.now()}`,
+    type: 'avertissement_retard',
+    employeeId,
+  });
+  for (const sub of subs) {
+    await envoyerPush(sub, payload);
+  }
+
+  db.prepare(
+    `INSERT INTO avertissements_etat (employee_id, mois, niveau_envoye) VALUES (?, ?, ?)
+     ON CONFLICT(employee_id, mois) DO UPDATE SET niveau_envoye = MAX(niveau_envoye, excluded.niveau_envoye)`
+  ).run(employeeId, mois, niveau);
+
+  db.prepare('INSERT INTO avertissements_historique (employee_id, mois, niveau, message) VALUES (?, ?, ?, ?)').run(
+    employeeId,
+    mois,
+    niveau,
+    message
+  );
+
+  return { nbAppareils: subs.length };
+}
+
 function demarrer() {
   setInterval(() => {
     verifierRappels().catch((err) => console.error('Erreur verification des rappels:', err));
@@ -226,4 +261,11 @@ function demarrer() {
   }, INTERVALLE_VERIFICATION_MS);
 }
 
-module.exports = { demarrer, verifierRappels, verifierAvertissementsRetards, calculerEtEnvoyerAvertissements };
+module.exports = {
+  demarrer,
+  verifierRappels,
+  verifierAvertissementsRetards,
+  calculerEtEnvoyerAvertissements,
+  envoyerAvertissementManuel,
+  NB_NIVEAUX_AVERTISSEMENT,
+};
