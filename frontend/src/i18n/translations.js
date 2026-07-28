@@ -358,6 +358,8 @@ export const TRADUCTIONS = {
       changerMotDePasse: 'Changer le mot de passe',
       motDePasseModifie: 'Mot de passe modifie.',
       seDeconnecter: 'Se deconnecter',
+      avertissementsTitre: 'Mes avertissements',
+      avertissementsAide: "Historique des avertissements automatiques qui vous ont ete envoyes pour des retards ou departs anticipes repetes.",
     },
     errorBoundary: {
       titre: 'Une erreur est survenue',
@@ -717,6 +719,8 @@ export const TRADUCTIONS = {
       changerMotDePasse: 'Change password',
       motDePasseModifie: 'Password changed.',
       seDeconnecter: 'Log out',
+      avertissementsTitre: 'My warnings',
+      avertissementsAide: 'History of automatic warnings sent to you for repeated lateness or early departures.',
     },
     errorBoundary: {
       titre: 'An error occurred',
@@ -1076,6 +1080,8 @@ export const TRADUCTIONS = {
       changerMotDePasse: 'שנה סיסמה',
       motDePasseModifie: 'הסיסמה שונתה.',
       seDeconnecter: 'התנתק',
+      avertissementsTitre: 'ההתראות שלי',
+      avertissementsAide: 'היסטוריית ההתראות האוטומטיות שנשלחו אליך בשל איחורים או יציאות מוקדמות חוזרות.',
     },
     errorBoundary: {
       titre: 'אירעה שגיאה',
