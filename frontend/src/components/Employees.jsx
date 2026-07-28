@@ -15,6 +15,7 @@ const EMPLOYE_VIDE = {
   nom: '',
   prenom: '',
   poste: '',
+  email: '',
   type_paie: 'horaire',
   taux_horaire: '',
   salaire_mensuel: '',
@@ -60,6 +61,7 @@ export default function Employees() {
         nom: form.nom,
         prenom: form.prenom,
         poste: form.poste,
+        email: form.email,
         type_paie: form.type_paie,
         solde_conges: Number(form.solde_conges),
         date_embauche: form.date_embauche,
@@ -88,6 +90,7 @@ export default function Employees() {
       nom: emp.nom,
       prenom: emp.prenom,
       poste: emp.poste || '',
+      email: emp.email || '',
       type_paie: emp.type_paie || 'horaire',
       taux_horaire: String(emp.taux_horaire),
       salaire_mensuel: emp.salaire_mensuel != null ? String(emp.salaire_mensuel) : '',
@@ -154,6 +157,7 @@ export default function Employees() {
         <input name="nom" placeholder={t('employees.nomPlaceholder')} value={form.nom} onChange={handleChange} required />
         <input name="prenom" placeholder={t('employees.prenomPlaceholder')} value={form.prenom} onChange={handleChange} required />
         <input name="poste" placeholder={t('employees.postePlaceholder')} value={form.poste} onChange={handleChange} />
+        <input name="email" type="email" placeholder={t('employees.emailPlaceholder')} value={form.email} onChange={handleChange} />
         <label className="champ-date-embauche">
           {t('employees.dateEmbauche')}
           <input
@@ -259,6 +263,7 @@ export default function Employees() {
             <th>{t('employees.colNom')}</th>
             <th>{t('employees.colPrenom')}</th>
             <th>{t('employees.colPoste')}</th>
+            <th>{t('employees.colEmail')}</th>
             <th>{t('employees.colAnciennete')}</th>
             <th>{t('employees.colModePaie')}</th>
             <th>{t('employees.colTauxHoraire')}</th>
@@ -276,6 +281,7 @@ export default function Employees() {
               <td>{emp.nom}</td>
               <td>{emp.prenom}</td>
               <td>{emp.poste}</td>
+              <td>{emp.email || '-'}</td>
               <td>{emp.date_embauche || '-'}</td>
               <td>
                 {emp.type_paie === 'mensuel'
@@ -301,7 +307,7 @@ export default function Employees() {
           ))}
           {employees.length === 0 && (
             <tr>
-              <td colSpan={12} className="vide">
+              <td colSpan={13} className="vide">
                 {t('employees.aucunEmploye')}
               </td>
             </tr>

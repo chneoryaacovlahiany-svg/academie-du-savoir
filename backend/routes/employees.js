@@ -64,7 +64,7 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', requireAdmin, (req, res) => {
-  const { nom, prenom, poste, solde_conges, date_embauche } = req.body;
+  const { nom, prenom, poste, solde_conges, date_embauche, email } = req.body;
   if (!nom || !prenom) {
     return res.status(400).json({ error: 'Le nom et le prenom sont requis' });
   }
@@ -79,8 +79,8 @@ router.post('/', requireAdmin, (req, res) => {
 
   const info = db
     .prepare(
-      `INSERT INTO employees (nom, prenom, poste, type_paie, taux_horaire, salaire_mensuel, heures_semaine, solde_conges, date_embauche, pause_minutes, droit_heures_sup)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO employees (nom, prenom, poste, type_paie, taux_horaire, salaire_mensuel, heures_semaine, solde_conges, date_embauche, pause_minutes, droit_heures_sup, email)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       nom,
@@ -93,7 +93,8 @@ router.post('/', requireAdmin, (req, res) => {
       Number(solde_conges) || 0,
       date_embauche || dateLocale(),
       pause_minutes,
-      droit_heures_sup
+      droit_heures_sup,
+      email || null
     );
   const created = db.prepare('SELECT * FROM employees WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(ajouterSoldesCalcules(created));
@@ -112,6 +113,7 @@ router.put('/:id', requireAdmin, (req, res) => {
   const pause_minutes = req.body.pause_minutes !== undefined ? Number(req.body.pause_minutes) : existing.pause_minutes;
   const droit_heures_sup =
     req.body.droit_heures_sup !== undefined ? (req.body.droit_heures_sup ? 1 : 0) : existing.droit_heures_sup;
+  const email = req.body.email !== undefined ? req.body.email || null : existing.email;
 
   const remuneration = resoudreRemuneration(req.body, existing);
   if (remuneration.erreur) {
@@ -121,7 +123,7 @@ router.put('/:id', requireAdmin, (req, res) => {
   db.prepare(
     `UPDATE employees SET nom = ?, prenom = ?, poste = ?, type_paie = ?, taux_horaire = ?,
      salaire_mensuel = ?, heures_semaine = ?, solde_conges = ?, actif = ?, date_embauche = ?,
-     pause_minutes = ?, droit_heures_sup = ?
+     pause_minutes = ?, droit_heures_sup = ?, email = ?
      WHERE id = ?`
   ).run(
     nom,
@@ -136,6 +138,7 @@ router.put('/:id', requireAdmin, (req, res) => {
     date_embauche,
     pause_minutes,
     droit_heures_sup,
+    email,
     req.params.id
   );
 

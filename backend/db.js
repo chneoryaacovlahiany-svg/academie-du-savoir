@@ -146,6 +146,9 @@ if (!colonnesEmployees.includes('pause_minutes')) {
 if (!colonnesEmployees.includes('droit_heures_sup')) {
   db.exec('ALTER TABLE employees ADD COLUMN droit_heures_sup INTEGER NOT NULL DEFAULT 1');
 }
+if (!colonnesEmployees.includes('email')) {
+  db.exec('ALTER TABLE employees ADD COLUMN email TEXT');
+}
 
 const colonnesHoraires = db.prepare("PRAGMA table_info(horaires_travail)").all().map((c) => c.name);
 if (!colonnesHoraires.includes('pause_appliquee')) {
@@ -193,6 +196,9 @@ const parametresDefaut = {
     "Vos retards ou departs anticipes repetes posent un probleme serieux. Si la situation ne s'ameliore pas, des mesures pourront etre prises.",
   avertissements_retards_message_5:
     "Dernier avertissement: vos retards ou departs anticipes repetes constituent un manquement grave a vos obligations. Sans amelioration immediate, des sanctions disciplinaires, pouvant aller jusqu'a la rupture du contrat, pourront etre engagees.",
+  avertissements_email_actif: '0',
+  email_conges_nouvelle_demande_actif: '0',
+  email_conges_reponse_actif: '0',
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {

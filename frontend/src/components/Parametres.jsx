@@ -32,6 +32,7 @@ export default function Parametres() {
     { id: 'retards', label: t('parametres.ongletRetards') },
     { id: 'notifications', label: t('parametres.ongletNotifications') },
     { id: 'avertissements', label: t('parametres.ongletAvertissements') },
+    { id: 'email', label: t('parametres.ongletEmail') },
     { id: 'ip', label: t('parametres.ongletIp') },
     { id: 'bareme', label: t('parametres.ongletBareme') },
     { id: 'feries', label: t('parametres.ongletFeries') },
@@ -157,11 +158,17 @@ export default function Parametres() {
     setMessageEnvoiManuel('');
     try {
       const resultat = await api.envoyerAvertissement(envoiManuel.employee_id, envoiManuel.niveau, envoiManuel.message);
-      setMessageEnvoiManuel(
-        resultat.nb_appareils > 0
-          ? t('parametres.avertissementEnvoye', { n: resultat.nb_appareils })
-          : t('parametres.avertissementEnvoyeSansAppareil')
-      );
+      let msg;
+      if (resultat.nb_appareils > 0 && resultat.email_envoye) {
+        msg = t('parametres.avertissementEnvoyeAppareilEtEmail', { n: resultat.nb_appareils });
+      } else if (resultat.nb_appareils > 0) {
+        msg = t('parametres.avertissementEnvoye', { n: resultat.nb_appareils });
+      } else if (resultat.email_envoye) {
+        msg = t('parametres.avertissementEnvoyeEmailSeulement');
+      } else {
+        msg = t('parametres.avertissementEnvoyeSansAppareil');
+      }
+      setMessageEnvoiManuel(msg);
       charger();
     } catch (err) {
       setErreurEnvoiManuel(err.message);
@@ -576,6 +583,40 @@ export default function Parametres() {
           )}
         </tbody>
       </table>
+      </>
+      )}
+
+      {ongletActif === 'email' && (
+      <>
+      <h3>{t('parametres.emailTitre')}</h3>
+      <p className="aide">{t('parametres.emailAide')}</p>
+      <form className="form-parametres" onSubmit={enregistrerParametres}>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.avertissements_email_actif}
+            onChange={(e) => handleParametreCaseChange('avertissements_email_actif', e.target.checked)}
+          />
+          {t('parametres.emailAvertissementsLabel')}
+        </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.email_conges_nouvelle_demande_actif}
+            onChange={(e) => handleParametreCaseChange('email_conges_nouvelle_demande_actif', e.target.checked)}
+          />
+          {t('parametres.emailCongesNouvelleDemandeLabel')}
+        </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.email_conges_reponse_actif}
+            onChange={(e) => handleParametreCaseChange('email_conges_reponse_actif', e.target.checked)}
+          />
+          {t('parametres.emailCongesReponseLabel')}
+        </label>
+        <button type="submit">{t('parametres.enregistrerParametres')}</button>
+      </form>
       </>
       )}
 

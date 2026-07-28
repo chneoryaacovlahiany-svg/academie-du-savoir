@@ -3,11 +3,15 @@ const db = require('../db');
 const { montantMaladiePourAbsence } = require('../calculs');
 const { chargerParametres } = require('../soldes');
 const { requireAdmin } = require('../middleware/auth');
+const { envoyerEmail } = require('../email');
+const { chargerInfosEntreprise } = require('./entreprise');
 
 const router = express.Router();
 
 const TYPES_VALIDES = ['conge_paye', 'sans_solde', 'maladie', 'autre'];
 const STATUTS_VALIDES = ['en_attente', 'approuve', 'refuse'];
+const LIBELLES_TYPE = { conge_paye: 'Conge paye', sans_solde: 'Sans solde', maladie: 'Maladie', autre: 'Autre' };
+const LIBELLES_STATUT = { approuve: 'approuvee', refuse: 'refusee' };
 
 function nbJoursEntre(debut, fin) {
   const d1 = new Date(debut);
@@ -73,6 +77,20 @@ router.post('/', (req, res) => {
 
   const conge = db.prepare('SELECT * FROM conges WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(ajouterMontantMaladie(conge));
+
+  const params = chargerParametres();
+  if (params.email_conges_nouvelle_demande_actif) {
+    const entreprise = chargerInfosEntreprise();
+    if (entreprise.email) {
+      envoyerEmail(
+        entreprise.email,
+        `Nouvelle demande de conge - ${employee.prenom} ${employee.nom}`,
+        `${employee.prenom} ${employee.nom} a soumis une demande de conge (${LIBELLES_TYPE[congeType]}) du ${date_debut} au ${date_fin} (${nb_jours} jour(s)).${
+          commentaire ? `\n\nCommentaire: ${commentaire}` : ''
+        }`
+      );
+    }
+  }
 });
 
 router.put('/:id/statut', requireAdmin, (req, res) => {
@@ -87,6 +105,18 @@ router.put('/:id/statut', requireAdmin, (req, res) => {
 
   const updated = db.prepare('SELECT * FROM conges WHERE id = ?').get(req.params.id);
   res.json(ajouterMontantMaladie(updated));
+
+  const params = chargerParametres();
+  if (params.email_conges_reponse_actif && (statut === 'approuve' || statut === 'refuse')) {
+    const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(conge.employee_id);
+    if (employee?.email) {
+      envoyerEmail(
+        employee.email,
+        'Reponse a votre demande de conge',
+        `Votre demande de conge (${LIBELLES_TYPE[conge.type]}) du ${conge.date_debut} au ${conge.date_fin} a ete ${LIBELLES_STATUT[statut]}.`
+      );
+    }
+  }
 });
 
 router.delete('/:id', requireAdmin, (req, res) => {

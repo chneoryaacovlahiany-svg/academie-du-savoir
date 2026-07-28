@@ -43,8 +43,8 @@ router.post('/envoyer', requireAdmin, async (req, res) => {
   const emp = db.prepare('SELECT * FROM employees WHERE id = ?').get(employee_id);
   if (!emp) return res.status(404).json({ error: 'Employe introuvable' });
 
-  const { nbAppareils } = await envoyerAvertissementManuel(employee_id, niveauNombre, message.trim());
-  res.status(201).json({ ok: true, nb_appareils: nbAppareils });
+  const { nbAppareils, emailEnvoye } = await envoyerAvertissementManuel(employee_id, niveauNombre, message.trim());
+  res.status(201).json({ ok: true, nb_appareils: nbAppareils, email_envoye: emailEnvoye });
 });
 
 module.exports = router;

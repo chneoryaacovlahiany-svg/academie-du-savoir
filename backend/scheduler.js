@@ -3,6 +3,7 @@ const { webpush } = require('./vapid');
 const { dateLocale, jourSemaineLundi0 } = require('./calculs');
 const { chargerParametres } = require('./soldes');
 const { calculerJoursManquants } = require('./retards');
+const { envoyerEmail } = require('./email');
 
 const INTERVALLE_VERIFICATION_MS = 60000;
 const NB_NIVEAUX_AVERTISSEMENT = 5;
@@ -172,7 +173,6 @@ async function calculerEtEnvoyerAvertissements() {
   const employees = db.prepare('SELECT * FROM employees WHERE actif = 1').all();
   for (const emp of employees) {
     const subs = db.prepare('SELECT * FROM push_subscriptions WHERE employee_id = ?').all(emp.id);
-    if (subs.length === 0) continue;
 
     const { joursManquants } = calculerJoursManquants(emp.id, debut, fin);
     const niveauAtteint = Math.min(NB_NIVEAUX_AVERTISSEMENT, Math.floor(joursManquants.length / seuil));
@@ -192,6 +192,9 @@ async function calculerEtEnvoyerAvertissements() {
     });
     for (const sub of subs) {
       await envoyerPush(sub, payload);
+    }
+    if (params.avertissements_email_actif && emp.email) {
+      await envoyerEmail(emp.email, 'Avertissement - retards ou departs anticipes repetes', corps);
     }
 
     db.prepare(
@@ -239,6 +242,14 @@ async function envoyerAvertissementManuel(employeeId, niveau, message) {
     await envoyerPush(sub, payload);
   }
 
+  const params = chargerParametres();
+  const emp = db.prepare('SELECT * FROM employees WHERE id = ?').get(employeeId);
+  let emailEnvoye = false;
+  if (params.avertissements_email_actif && emp?.email) {
+    await envoyerEmail(emp.email, 'Avertissement - retards ou departs anticipes repetes', message);
+    emailEnvoye = true;
+  }
+
   db.prepare(
     `INSERT INTO avertissements_etat (employee_id, mois, niveau_envoye) VALUES (?, ?, ?)
      ON CONFLICT(employee_id, mois) DO UPDATE SET niveau_envoye = MAX(niveau_envoye, excluded.niveau_envoye)`
@@ -251,7 +262,7 @@ async function envoyerAvertissementManuel(employeeId, niveau, message) {
     message
   );
 
-  return { nbAppareils: subs.length };
+  return { nbAppareils: subs.length, emailEnvoye };
 }
 
 function demarrer() {

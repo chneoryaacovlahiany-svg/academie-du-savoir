@@ -33,3 +33,4 @@ router.put('/', requireAdmin, (req, res) => {
 });
 
 module.exports = router;
+module.exports.chargerInfosEntreprise = chargerInfosEntreprise;
