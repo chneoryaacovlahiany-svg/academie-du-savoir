@@ -19,7 +19,17 @@ function chargerOuGenererVapid() {
   return cles;
 }
 
+// Le "sub" doit etre une adresse ou une URL correspondant a un vrai domaine:
+// Apple (web.push.apple.com, utilise par les iPhone) rejette silencieusement
+// les envois avec une erreur 403 "BadJwtToken" si le domaine ressemble a un
+// domaine local/factice (ex: .local, .localhost) - contrairement a Google/FCM
+// qui ne verifie pas cette valeur, ce qui masquait completement le probleme
+// sur Android tout en cassant les notifications sur iPhone.
 const vapidKeys = chargerOuGenererVapid();
-webpush.setVapidDetails('mailto:contact@pointeuse.local', vapidKeys.publicKey, vapidKeys.privateKey);
+webpush.setVapidDetails(
+  process.env.VAPID_SUBJECT || 'mailto:notifications@chronopointe.com',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
 
 module.exports = { vapidKeys, webpush };
