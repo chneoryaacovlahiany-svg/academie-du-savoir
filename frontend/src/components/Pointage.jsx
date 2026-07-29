@@ -160,13 +160,19 @@ export default function Pointage() {
     if (!user?.employee_id) return;
     const rappel = calculerRappel(horaires[user.employee_id], statuts[user.employee_id], maintenant);
     if (rappel === 'entree') {
-      envoyerNotificationUneFois(`entree-${user.employee_id}`, t('header.appName'), {
-        body: t('pointage.rappelEntree'),
-      });
+      envoyerNotificationUneFois(
+        `entree-${user.employee_id}`,
+        t('header.appName'),
+        { body: t('pointage.rappelEntree') },
+        'entree'
+      );
     } else if (rappel === 'sortie') {
-      envoyerNotificationUneFois(`sortie-${user.employee_id}`, t('header.appName'), {
-        body: t('pointage.rappelSortie'),
-      });
+      envoyerNotificationUneFois(
+        `sortie-${user.employee_id}`,
+        t('header.appName'),
+        { body: t('pointage.rappelSortie') },
+        'sortie'
+      );
     }
   }, [user, horaires, statuts, maintenant]);
 

@@ -26,22 +26,31 @@ export function demanderPermissionNotifications() {
 // On utilise donc le service worker quand il est disponible, et on ne
 // retombe sur le constructeur classique que s'il n'y en a pas (ex: pas de
 // service worker enregistre).
-export async function envoyerNotificationUneFois(cle, titre, options) {
+export async function envoyerNotificationUneFois(cle, titre, options, type) {
   if (!notificationsSupportees() || Notification.permission !== 'granted') return;
   const cleStockage = CLE_PREFIX + cle;
   const aujourdhui = dateLocale();
   if (localStorage.getItem(cleStockage) === aujourdhui) return;
+
+  // Ce rappel s'affiche uniquement cote navigateur (jamais via le serveur),
+  // donc sans cet appel il n'apparaitrait jamais dans l'historique de la
+  // cloche de notifications, contrairement aux rappels du planificateur.
+  const journaliser = () => {
+    if (type) api.enregistrerNotificationLocale(type, titre, options.body).catch(() => {});
+  };
 
   if ('serviceWorker' in navigator) {
     const registration = await navigator.serviceWorker.getRegistration();
     if (registration) {
       await registration.showNotification(titre, options);
       localStorage.setItem(cleStockage, aujourdhui);
+      journaliser();
       return;
     }
   }
   new Notification(titre, options);
   localStorage.setItem(cleStockage, aujourdhui);
+  journaliser();
 }
 
 export function pushSupporte() {

@@ -1,5 +1,6 @@
 const express = require('express');
 const db = require('../db');
+const { enregistrerNotification } = require('../notifications');
 
 const router = express.Router();
 
@@ -12,6 +13,18 @@ router.get('/', (req, res) => {
     .prepare('SELECT * FROM notifications WHERE employee_id = ? ORDER BY date_creation DESC LIMIT 200')
     .all(req.user.employee_id);
   res.json(rows);
+});
+
+// Journalise un rappel affiche localement par le navigateur (Pointage.jsx),
+// qui n'a jamais transite par le serveur puisqu'il s'affiche uniquement
+// quand l'onglet est ouvert: sans cet appel, ce rappel n'apparaitrait jamais
+// dans l'historique, contrairement aux rappels envoyes par le planificateur.
+router.post('/', (req, res) => {
+  if (!req.user.employee_id) return res.status(400).json({ error: 'Compte non lie a un employe.' });
+  const { type, titre, corps } = req.body;
+  if (!type || !titre || !corps) return res.status(400).json({ error: 'type, titre et corps sont requis.' });
+  enregistrerNotification(req.user.employee_id, type, titre, corps);
+  res.json({ ok: true });
 });
 
 router.post('/tout-marquer-lu', (req, res) => {

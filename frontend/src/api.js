@@ -110,4 +110,6 @@ export const api = {
   // Centre de notifications (historique de tout ce qui a ete envoye par push/email)
   getNotifications: () => request('/notifications'),
   marquerNotificationsLues: () => request('/notifications/tout-marquer-lu', { method: 'POST' }),
+  enregistrerNotificationLocale: (type, titre, corps) =>
+    request('/notifications', { method: 'POST', body: JSON.stringify({ type, titre, corps }) }),
 };
