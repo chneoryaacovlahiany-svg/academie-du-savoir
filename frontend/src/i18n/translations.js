@@ -377,6 +377,7 @@ export const TRADUCTIONS = {
     notifications: {
       titre: 'Notifications',
       aucune: 'Aucune notification pour le moment.',
+      titreAdmin: 'Notifications des employes',
     },
     monCompte: {
       title: 'Mon compte',
@@ -766,6 +767,7 @@ export const TRADUCTIONS = {
     notifications: {
       titre: 'Notifications',
       aucune: 'No notifications yet.',
+      titreAdmin: 'Employee notifications',
     },
     monCompte: {
       title: 'My account',
@@ -1155,6 +1157,7 @@ export const TRADUCTIONS = {
     notifications: {
       titre: 'התראות',
       aucune: 'אין התראות כרגע.',
+      titreAdmin: 'התראות העובדים',
     },
     monCompte: {
       title: 'החשבון שלי',

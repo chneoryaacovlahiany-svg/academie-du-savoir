@@ -11,6 +11,7 @@ import MonCompte from './components/MonCompte.jsx';
 import Login from './components/Login.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import NotificationBell from './components/NotificationBell.jsx';
+import NotificationsAdmin from './components/NotificationsAdmin.jsx';
 import SelecteurIcone from './components/SelecteurIcone.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 import { useAuth } from './AuthContext.jsx';
@@ -53,6 +54,7 @@ function EnteteApp({ user, onOuvrirMonCompte }) {
           onChanger={changerDevise}
           options={DEVISES.map((d) => ({ value: d.code, label: `${d.symbole} ${t(`common.${{ EUR: 'deviseEuro', USD: 'deviseDollar', ILS: 'deviseShekel' }[d.code]}`)}` }))}
         />
+        {user.role === 'admin' && <NotificationsAdmin />}
         <NotificationBell />
         <button
           type="button"

@@ -1,6 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { enregistrerNotification } = require('../notifications');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -13,6 +14,21 @@ router.get('/', (req, res) => {
     .prepare('SELECT * FROM notifications WHERE employee_id = ? ORDER BY date_creation DESC LIMIT 200')
     .all(req.user.employee_id);
   res.json(rows);
+});
+
+// Vue de supervision reservee aux admins: historique de tous les employes,
+// avec leur nom, filtrable par ?employee_id=. Distincte de la route ci-dessus
+// qui reste strictement limitee a l'employe de la session.
+router.get('/admin', requireAdmin, (req, res) => {
+  const { employee_id } = req.query;
+  let requete = `SELECT n.*, e.nom, e.prenom FROM notifications n JOIN employees e ON e.id = n.employee_id WHERE 1 = 1`;
+  const params = [];
+  if (employee_id) {
+    requete += ' AND n.employee_id = ?';
+    params.push(employee_id);
+  }
+  requete += ' ORDER BY n.date_creation DESC LIMIT 200';
+  res.json(db.prepare(requete).all(...params));
 });
 
 // Journalise un rappel affiche localement par le navigateur (Pointage.jsx),

@@ -785,6 +785,15 @@ button.sortie:hover {
   margin: 0 0 8px;
 }
 
+.notif-bell-filtre {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #dbeafe;
+  font-size: 13px;
+}
+
 .notif-bell-liste {
   max-height: 360px;
   overflow-y: auto;

@@ -112,4 +112,6 @@ export const api = {
   marquerNotificationsLues: () => request('/notifications/tout-marquer-lu', { method: 'POST' }),
   enregistrerNotificationLocale: (type, titre, corps) =>
     request('/notifications', { method: 'POST', body: JSON.stringify({ type, titre, corps }) }),
+  getNotificationsAdmin: (employee_id) =>
+    request(`/notifications/admin${employee_id ? `?employee_id=${employee_id}` : ''}`),
 };
