@@ -79,8 +79,10 @@ router.post('/', (req, res) => {
   const conge = db.prepare('SELECT * FROM conges WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json(ajouterMontantMaladie(conge));
 
+  // Une seule case dans Parametres ("nouvelle demande de conge") declenche a la
+  // fois le push et l'email: pas besoin de cocher les deux separement.
   const params = chargerParametres();
-  if (params.email_conges_nouvelle_demande_actif) {
+  if (params.notif_conges_nouvelle_demande_actif) {
     const entreprise = chargerInfosEntreprise();
     if (entreprise.email) {
       envoyerEmail(
@@ -91,8 +93,6 @@ router.post('/', (req, res) => {
         }`
       );
     }
-  }
-  if (params.notif_conges_nouvelle_demande_actif) {
     // Un admin ne peut recevoir de notification push que si son compte est
     // lie a une fiche employe (meme mecanisme d'abonnement que les employes):
     // sans ce lien, il n'y a aucun appareil connu ou envoyer la notification.
@@ -123,14 +123,16 @@ router.put('/:id/statut', requireAdmin, (req, res) => {
   const updated = db.prepare('SELECT * FROM conges WHERE id = ?').get(req.params.id);
   res.json(ajouterMontantMaladie(updated));
 
+  // Une seule case ("reponse a une demande de conge") declenche a la fois le
+  // push et l'email a l'employe.
   const params = chargerParametres();
-  if ((params.email_conges_reponse_actif || params.notif_conges_reponse_actif) && (statut === 'approuve' || statut === 'refuse')) {
+  if (params.notif_conges_reponse_actif && (statut === 'approuve' || statut === 'refuse')) {
     const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(conge.employee_id);
     const texte = `Votre demande de conge (${LIBELLES_TYPE[conge.type]}) du ${conge.date_debut} au ${conge.date_fin} a ete ${LIBELLES_STATUT[statut]}.`;
-    if (params.email_conges_reponse_actif && employee?.email) {
+    if (employee?.email) {
       envoyerEmail(employee.email, 'Reponse a votre demande de conge', texte);
     }
-    if (params.notif_conges_reponse_actif && employee) {
+    if (employee) {
       envoyerPushAEmploye(employee.id, 'Pointeuse', texte, 'conge_reponse');
     }
   }

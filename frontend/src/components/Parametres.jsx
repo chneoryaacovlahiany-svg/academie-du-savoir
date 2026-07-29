@@ -615,22 +615,7 @@ export default function Parametres() {
           />
           {t('parametres.emailAvertissementsLabel')}
         </label>
-        <label className="champ-parametre champ-case">
-          <input
-            type="checkbox"
-            checked={!!parametres.email_conges_nouvelle_demande_actif}
-            onChange={(e) => handleParametreCaseChange('email_conges_nouvelle_demande_actif', e.target.checked)}
-          />
-          {t('parametres.emailCongesNouvelleDemandeLabel')}
-        </label>
-        <label className="champ-parametre champ-case">
-          <input
-            type="checkbox"
-            checked={!!parametres.email_conges_reponse_actif}
-            onChange={(e) => handleParametreCaseChange('email_conges_reponse_actif', e.target.checked)}
-          />
-          {t('parametres.emailCongesReponseLabel')}
-        </label>
+        <p className="aide">{t('parametres.emailCongesRenvoi')}</p>
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
       </>

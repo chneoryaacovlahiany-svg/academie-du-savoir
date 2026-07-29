@@ -197,8 +197,6 @@ const parametresDefaut = {
   avertissements_retards_message_5:
     "Dernier avertissement: vos retards ou departs anticipes repetes constituent un manquement grave a vos obligations. Sans amelioration immediate, des sanctions disciplinaires, pouvant aller jusqu'a la rupture du contrat, pourront etre engagees.",
   avertissements_email_actif: '0',
-  email_conges_nouvelle_demande_actif: '0',
-  email_conges_reponse_actif: '0',
   notif_conges_nouvelle_demande_actif: '0',
   notif_conges_reponse_actif: '0',
 };

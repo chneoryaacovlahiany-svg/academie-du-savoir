@@ -30,8 +30,6 @@ const CLES_BOOLEENNES = [
   'notif_entree_avant_actif',
   'avertissements_retards_actif',
   'avertissements_email_actif',
-  'email_conges_nouvelle_demande_actif',
-  'email_conges_reponse_actif',
   'notif_conges_nouvelle_demande_actif',
   'notif_conges_reponse_actif',
 ];
