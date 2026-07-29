@@ -106,4 +106,8 @@ export const api = {
   getAvertissements: () => request('/avertissements'),
   envoyerAvertissement: (employee_id, niveau, message) =>
     request('/avertissements/envoyer', { method: 'POST', body: JSON.stringify({ employee_id, niveau, message }) }),
+
+  // Centre de notifications (historique de tout ce qui a ete envoye par push/email)
+  getNotifications: () => request('/notifications'),
+  marquerNotificationsLues: () => request('/notifications/tout-marquer-lu', { method: 'POST' }),
 };

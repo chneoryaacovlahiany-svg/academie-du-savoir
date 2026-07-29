@@ -10,6 +10,7 @@ import Comptes from './components/Comptes.jsx';
 import MonCompte from './components/MonCompte.jsx';
 import Login from './components/Login.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
+import NotificationBell from './components/NotificationBell.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 import { useAuth } from './AuthContext.jsx';
 import { EntrepriseProvider, useEntreprise } from './EntrepriseContext.jsx';
@@ -17,7 +18,12 @@ import { useLangue, LANGUES } from './LangueContext.jsx';
 
 const CLES_DEVISE = { EUR: 'deviseEuro', USD: 'deviseDollar', ILS: 'deviseShekel' };
 
-function EnteteApp() {
+function initialesUtilisateur(user) {
+  if (user?.employee) return `${user.employee.prenom[0]}${user.employee.nom[0]}`.toUpperCase();
+  return (user?.email || '?')[0].toUpperCase();
+}
+
+function EnteteApp({ user, onOuvrirMonCompte }) {
   const { entreprise } = useEntreprise();
   const { devise, changerDevise } = useDevise();
   const { t, langue, changerLangue } = useLangue();
@@ -32,6 +38,17 @@ function EnteteApp() {
         </div>
       </div>
       <div className="selecteurs-header">
+        <div className="app-header-actions">
+          <NotificationBell />
+          <button
+            type="button"
+            className="avatar-utilisateur"
+            onClick={onOuvrirMonCompte}
+            title={t('tabs.monCompte')}
+          >
+            {initialesUtilisateur(user)}
+          </button>
+        </div>
         <label className="selecteur-devise">
           {t('header.langue')}{' '}
           <select value={langue} onChange={(e) => changerLangue(e.target.value)}>
@@ -71,14 +88,12 @@ export default function App() {
     { id: 'rapport', label: t('tabs.rapport') },
     { id: 'parametres', label: t('tabs.parametres') },
     { id: 'comptes', label: t('tabs.comptes') },
-    { id: 'mon-compte', label: t('tabs.monCompte') },
   ];
 
   const ONGLETS_EMPLOYE = [
     { id: 'pointage', label: t('tabs.pointage') },
     { id: 'calendrier', label: t('tabs.calendrier') },
     { id: 'conges', label: t('tabs.conges') },
-    { id: 'mon-compte', label: t('tabs.monCompte') },
   ];
 
   if (chargement) {
@@ -90,12 +105,13 @@ export default function App() {
   }
 
   const onglets = user.role === 'admin' ? ONGLETS_ADMIN : ONGLETS_EMPLOYE;
-  const ongletActif = onglets.some((o) => o.id === onglet) ? onglet : onglets[0].id;
+  const ongletActif =
+    onglet === 'mon-compte' || onglets.some((o) => o.id === onglet) ? onglet : onglets[0].id;
 
   return (
     <EntrepriseProvider>
       <div className="app">
-        <EnteteApp />
+        <EnteteApp user={user} onOuvrirMonCompte={() => setOnglet('mon-compte')} />
 
         <nav className="tabs">
           {onglets.map((o) => (

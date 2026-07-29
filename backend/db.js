@@ -125,6 +125,16 @@ db.exec(`
     message TEXT NOT NULL,
     date_envoi TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    type TEXT NOT NULL,
+    titre TEXT NOT NULL,
+    corps TEXT NOT NULL,
+    lu INTEGER NOT NULL DEFAULT 0,
+    date_creation TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);

@@ -4,6 +4,7 @@ const { dateLocale, jourSemaineLundi0 } = require('./calculs');
 const { chargerParametres } = require('./soldes');
 const { calculerJoursManquants } = require('./retards');
 const { envoyerEmail } = require('./email');
+const { enregistrerNotification } = require('./notifications');
 
 const INTERVALLE_VERIFICATION_MS = 60000;
 const NB_NIVEAUX_AVERTISSEMENT = 5;
@@ -35,6 +36,7 @@ async function envoyerPush(sub, payload) {
 // donne. Reutilise pour les evenements ponctuels (conges) en plus des
 // rappels/avertissements automatiques.
 async function envoyerPushAEmploye(employeeId, titre, corps, type) {
+  enregistrerNotification(employeeId, type, titre, corps);
   const subs = db.prepare('SELECT * FROM push_subscriptions WHERE employee_id = ?').all(employeeId);
   if (subs.length === 0) return;
   const payload = JSON.stringify({ titre, corps, tag: `${type}-${employeeId}-${Date.now()}`, type, employeeId });
@@ -94,6 +96,7 @@ async function verifierEtEnvoyerRappel(emp, subs, date, type, heurePrevueStr, nb
     actions,
   });
 
+  enregistrerNotification(emp.id, type, 'Pointeuse', corps);
   for (const sub of subs) {
     await envoyerPush(sub, payload);
   }
@@ -212,6 +215,7 @@ async function calculerEtEnvoyerAvertissements() {
       type: 'avertissement_retard',
       employeeId: emp.id,
     });
+    enregistrerNotification(emp.id, 'avertissement_retard', 'Pointeuse', corps);
     for (const sub of subs) {
       await envoyerPush(sub, payload);
     }
@@ -260,6 +264,7 @@ async function envoyerAvertissementManuel(employeeId, niveau, message) {
     type: 'avertissement_retard',
     employeeId,
   });
+  enregistrerNotification(employeeId, 'avertissement_retard', 'Pointeuse', message);
   for (const sub of subs) {
     await envoyerPush(sub, payload);
   }

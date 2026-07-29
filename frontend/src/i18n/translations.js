@@ -374,6 +374,10 @@ export const TRADUCTIONS = {
       confirmSupprimer: 'Supprimer ce compte ?',
       desactive: 'Desactive',
     },
+    notifications: {
+      titre: 'Notifications',
+      aucune: 'Aucune notification pour le moment.',
+    },
     monCompte: {
       title: 'Mon compte',
       connecteEnTant: 'Connecte en tant que',
@@ -759,6 +763,10 @@ export const TRADUCTIONS = {
       confirmSupprimer: 'Delete this account?',
       desactive: 'Deactivated',
     },
+    notifications: {
+      titre: 'Notifications',
+      aucune: 'No notifications yet.',
+    },
     monCompte: {
       title: 'My account',
       connecteEnTant: 'Logged in as',
@@ -1143,6 +1151,10 @@ export const TRADUCTIONS = {
       aucunCompte: 'אין חשבונות',
       confirmSupprimer: 'למחוק חשבון זה?',
       desactive: 'מושבת',
+    },
+    notifications: {
+      titre: 'התראות',
+      aucune: 'אין התראות כרגע.',
     },
     monCompte: {
       title: 'החשבון שלי',
