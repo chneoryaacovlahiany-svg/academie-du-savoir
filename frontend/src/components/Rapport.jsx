@@ -31,6 +31,7 @@ export default function Rapport() {
   const [nouvelleFiche, setNouvelleFiche] = useState({ employee_id: '', mois: moisCourant(), fichier: null });
   const [erreurFiche, setErreurFiche] = useState('');
   const [messageFiche, setMessageFiche] = useState('');
+  const [ficheVisualisee, setFicheVisualisee] = useState(null);
 
   const chargerFichesPaie = () => api.getFichesPaie().then(setFichesPaie);
 
@@ -311,14 +312,9 @@ export default function Rapport() {
                 <td>{f.nom_fichier}</td>
                 <td>{new Date(f.date_upload.replace(' ', 'T') + 'Z').toLocaleString(locale)}</td>
                 <td className="actions">
-                  <a
-                    className="bouton-lien"
-                    href={`/api/fiches-paie/${f.id}/visualiser`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
+                  <button type="button" className="bouton-lien" onClick={() => setFicheVisualisee(f.id)}>
                     {t('fichesPaie.visualiser')}
-                  </a>
+                  </button>
                   <a className="bouton-lien" href={`/api/fiches-paie/${f.id}/telecharger`}>
                     {t('fichesPaie.telecharger')}
                   </a>
@@ -340,6 +336,23 @@ export default function Rapport() {
           </tbody>
         </table>
       </div>
+
+      {ficheVisualisee && (
+        <div className="modale-fond" onClick={() => setFicheVisualisee(null)}>
+          <div className="modale-contenu" onClick={(e) => e.stopPropagation()}>
+            <div className="modale-entete">
+              <button type="button" className="secondary" onClick={() => setFicheVisualisee(null)}>
+                {t('fichesPaie.fermer')}
+              </button>
+            </div>
+            <iframe
+              src={`/api/fiches-paie/${ficheVisualisee}/visualiser`}
+              title={t('fichesPaie.visualiser')}
+              className="modale-iframe"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

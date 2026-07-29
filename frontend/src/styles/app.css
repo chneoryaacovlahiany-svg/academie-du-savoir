@@ -374,6 +374,42 @@ button:disabled {
   transform: translateY(-1px);
 }
 
+.modale-fond {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+
+.modale-contenu {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+}
+
+.modale-entete {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modale-iframe {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
+
 button.secondary {
   background: #6b7280;
 }
