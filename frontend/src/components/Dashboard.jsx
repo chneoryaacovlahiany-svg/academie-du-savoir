@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [employeeFiltre, setEmployeeFiltre] = useState('');
   const [donnees, setDonnees] = useState(null);
   const [congesEnAttente, setCongesEnAttente] = useState([]);
+  const [avertissements, setAvertissements] = useState([]);
   const [erreur, setErreur] = useState('');
 
   const STATUT_INFO = {
@@ -47,9 +48,18 @@ export default function Dashboard() {
     }
   };
 
+  const chargerAvertissements = async () => {
+    try {
+      setAvertissements(await api.getAvertissements());
+    } catch {
+      setAvertissements([]);
+    }
+  };
+
   useEffect(() => {
     api.getEmployees().then(setEmployees);
     chargerCongesEnAttente();
+    chargerAvertissements();
   }, []);
 
   useEffect(() => {
@@ -71,6 +81,8 @@ export default function Dashboard() {
   if (!donnees) return <div className="panel">{t('common.loading')}</div>;
 
   const { global: g, employes } = donnees;
+  const moisCourant = donnees.periode.debut_mois.slice(0, 7);
+  const avertissementsCeMois = avertissements.filter((a) => a.mois === moisCourant);
 
   return (
     <div className="panel">
@@ -127,6 +139,10 @@ export default function Dashboard() {
           <div className="cadran-valeur">{congesEnAttente.length}</div>
           <div className="cadran-label">{t('dashboard.demandesCongeAttente')}</div>
         </div>
+        <div className={`cadran ${avertissementsCeMois.length > 0 ? 'cadran-alerte' : ''}`}>
+          <div className="cadran-valeur">{avertissementsCeMois.length}</div>
+          <div className="cadran-label">{t('dashboard.avertissementsCeMois')}</div>
+        </div>
       </div>
 
       {erreur && <p className="erreur">{erreur}</p>}
@@ -167,6 +183,37 @@ export default function Dashboard() {
           </div>
         </>
       )}
+
+      <h3>{t('dashboard.avertissementsRecentsTitre')}</h3>
+      <div className="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>{t('parametres.colDateEnvoi')}</th>
+              <th>{t('parametres.colEmploye')}</th>
+              <th>{t('parametres.colNiveau')}</th>
+              <th>{t('parametres.colMessage')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {avertissements.slice(0, 10).map((a) => (
+              <tr key={a.id}>
+                <td>{new Date(a.date_envoi.replace(' ', 'T') + 'Z').toLocaleString(locale)}</td>
+                <td>{a.prenom} {a.nom}</td>
+                <td>{a.niveau}</td>
+                <td>{a.message}</td>
+              </tr>
+            ))}
+            {avertissements.length === 0 && (
+              <tr>
+                <td colSpan={4} className="vide">
+                  {t('parametres.aucunAvertissement')}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       <h3>{t('dashboard.congesParEmploye')}</h3>
       <div className="table-scroll">
