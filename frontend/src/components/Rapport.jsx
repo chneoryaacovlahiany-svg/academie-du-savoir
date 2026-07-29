@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { api } from '../api';
 import { useAuth } from '../AuthContext.jsx';
 import { useDevise } from '../DeviseContext.jsx';
@@ -6,6 +6,11 @@ import { useEntreprise } from '../EntrepriseContext.jsx';
 import { useLangue } from '../LangueContext.jsx';
 import { moisLocal as moisCourant } from '../dateUtils';
 import { exporterCSV, exporterPDF } from '../export';
+
+// Charge pdfjs-dist (bibliotheque volumineuse) uniquement quand on ouvre
+// reellement une fiche de paie, plutot que de l'inclure dans le
+// chargement initial de toute l'application.
+const VisualiseurPdf = lazy(() => import('./VisualiseurPdf.jsx'));
 
 function lireFichierBase64(fichier) {
   return new Promise((resolve, reject) => {
@@ -345,11 +350,11 @@ export default function Rapport() {
                 {t('fichesPaie.fermer')}
               </button>
             </div>
-            <iframe
-              src={`/api/fiches-paie/${ficheVisualisee}/visualiser`}
-              title={t('fichesPaie.visualiser')}
-              className="modale-iframe"
-            />
+            <div className="modale-corps">
+              <Suspense fallback={<p className="visualiseur-pdf-chargement">{t('fichesPaie.chargementPdf')}</p>}>
+                <VisualiseurPdf url={`/api/fiches-paie/${ficheVisualisee}/visualiser`} />
+              </Suspense>
+            </div>
           </div>
         </div>
       )}

@@ -404,10 +404,28 @@ button:disabled {
   border-bottom: 1px solid #e5e7eb;
 }
 
-.modale-iframe {
+.modale-corps {
   flex: 1;
-  width: 100%;
-  border: none;
+  overflow-y: auto;
+  background: #52525b;
+  padding: 16px;
+}
+
+.visualiseur-pdf-chargement {
+  color: white;
+  text-align: center;
+}
+
+.visualiseur-pdf-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.visualiseur-pdf-page {
+  max-width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 button.secondary {
