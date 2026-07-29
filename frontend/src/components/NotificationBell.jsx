@@ -33,13 +33,21 @@ export default function NotificationBell() {
 
   const nbNonLues = notifications.filter((n) => !n.lu).length;
 
+  // Recharge a chaque ouverture (pas seulement toutes les 60s): une
+  // notification survenue juste avant l'ouverture doit apparaitre
+  // immediatement, sans attendre le prochain rafraichissement periodique.
   const basculerPanneau = () => {
     const prochainEtat = !ouvert;
     setOuvert(prochainEtat);
-    if (prochainEtat && nbNonLues > 0) {
-      api.marquerNotificationsLues().then(() => {
-        setNotifications((liste) => liste.map((n) => ({ ...n, lu: 1 })));
-      });
+    if (prochainEtat) {
+      api.getNotifications().then((liste) => {
+        setNotifications(liste);
+        if (liste.some((n) => !n.lu)) {
+          api.marquerNotificationsLues().then(() => {
+            setNotifications((l) => l.map((n) => ({ ...n, lu: 1 })));
+          });
+        }
+      }).catch(() => {});
     }
   };
 

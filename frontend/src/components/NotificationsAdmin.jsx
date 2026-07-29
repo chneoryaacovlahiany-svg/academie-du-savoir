@@ -19,10 +19,11 @@ export default function NotificationsAdmin() {
     api.getEmployees().then(setEmployees).catch(() => {});
   }, []);
 
+  const charger = () => {
+    api.getNotificationsAdmin(employeeFiltre || undefined).then(setNotifications).catch(() => {});
+  };
+
   useEffect(() => {
-    const charger = () => {
-      api.getNotificationsAdmin(employeeFiltre || undefined).then(setNotifications).catch(() => {});
-    };
     charger();
     const intervalle = setInterval(charger, INTERVALLE_RAFRAICHISSEMENT_MS);
     return () => clearInterval(intervalle);
@@ -38,9 +39,18 @@ export default function NotificationsAdmin() {
     return () => document.removeEventListener('mousedown', gestionnaire);
   }, []);
 
+  // Recharge a chaque ouverture (pas seulement toutes les 60s): une
+  // notification survenue juste avant l'ouverture doit apparaitre
+  // immediatement, sans attendre le prochain rafraichissement periodique.
+  const basculerPanneau = () => {
+    const prochainEtat = !ouvert;
+    setOuvert(prochainEtat);
+    if (prochainEtat) charger();
+  };
+
   return (
     <div className="notif-bell-conteneur" ref={conteneurRef}>
-      <button type="button" className="notif-bell-bouton" onClick={() => setOuvert(!ouvert)} aria-label={t('notifications.titreAdmin')}>
+      <button type="button" className="notif-bell-bouton" onClick={basculerPanneau} aria-label={t('notifications.titreAdmin')}>
         👥
       </button>
       {ouvert && (
