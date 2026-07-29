@@ -75,6 +75,31 @@ export default function Rapport() {
     chargerFichesPaie();
   };
 
+  // Recupere le fichier via fetch (pas une navigation directe vers l'URL):
+  // sur Safari iOS, un lien vers un PDF ouvre une page de consultation dans
+  // l'onglet en cours au lieu de proposer un telechargement, sans moyen d'y
+  // revenir (meme souci que constate avec l'ancien "Visualiser" en iframe).
+  // Le clic programmatique sur un lien pointant vers un blob local declenche
+  // l'enregistrement sans jamais quitter la page de l'application.
+  const telechargerFiche = async (id, nomFichier) => {
+    setErreurFiche('');
+    try {
+      const reponse = await fetch(`/api/fiches-paie/${id}/telecharger`, { credentials: 'same-origin' });
+      if (!reponse.ok) throw new Error(t('fichesPaie.erreurChargementPdf'));
+      const blob = await reponse.blob();
+      const url = URL.createObjectURL(blob);
+      const lien = document.createElement('a');
+      lien.href = url;
+      lien.download = nomFichier;
+      document.body.appendChild(lien);
+      lien.click();
+      lien.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setErreurFiche(err.message);
+    }
+  };
+
   const charger = async (m) => {
     setErreur('');
     try {
@@ -246,11 +271,11 @@ export default function Rapport() {
       )}
 
       <h2>{estAdmin ? t('fichesPaie.titre') : t('fichesPaie.titreEmploye')}</h2>
+      {erreurFiche && <p className="erreur">{erreurFiche}</p>}
 
       {estAdmin && (
         <>
           <h3>{t('fichesPaie.ajouterTitre')}</h3>
-          {erreurFiche && <p className="erreur">{erreurFiche}</p>}
           {messageFiche && <p className="confirmation">{messageFiche}</p>}
           <form className="form-inline" onSubmit={ajouterFiche}>
             <label>
@@ -320,9 +345,13 @@ export default function Rapport() {
                   <button type="button" className="bouton-lien" onClick={() => setFicheVisualisee(f.id)}>
                     {t('fichesPaie.visualiser')}
                   </button>
-                  <a className="bouton-lien" href={`/api/fiches-paie/${f.id}/telecharger`}>
+                  <button
+                    type="button"
+                    className="bouton-lien"
+                    onClick={() => telechargerFiche(f.id, f.nom_fichier)}
+                  >
                     {t('fichesPaie.telecharger')}
-                  </a>
+                  </button>
                   {estAdmin && (
                     <button type="button" className="danger" onClick={() => supprimerFiche(f.id)}>
                       {t('common.delete')}
