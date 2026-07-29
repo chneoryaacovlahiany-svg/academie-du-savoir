@@ -406,7 +406,7 @@ button:disabled {
 
 .modale-corps {
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   background: #52525b;
   padding: 16px;
 }
@@ -414,6 +414,27 @@ button:disabled {
 .visualiseur-pdf-chargement {
   color: white;
   text-align: center;
+}
+
+.visualiseur-pdf-zoom {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  color: white;
+  font-weight: 600;
+}
+
+.visualiseur-pdf-zoom button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 18px;
+  line-height: 1;
 }
 
 .visualiseur-pdf-pages {
@@ -424,7 +445,6 @@ button:disabled {
 }
 
 .visualiseur-pdf-page {
-  max-width: 100%;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
