@@ -72,23 +72,24 @@ function EnteteApp({ user, onOuvrirMonCompte }) {
 export default function App() {
   const { user, chargement } = useAuth();
   const [onglet, setOnglet] = useState('dashboard');
+  const [menuOuvert, setMenuOuvert] = useState(false);
   const { t } = useLangue();
 
   const ONGLETS_ADMIN = [
-    { id: 'dashboard', label: t('tabs.dashboard') },
-    { id: 'pointage', label: t('tabs.pointage') },
-    { id: 'calendrier', label: t('tabs.calendrier') },
-    { id: 'employes', label: t('tabs.employes') },
-    { id: 'conges', label: t('tabs.conges') },
-    { id: 'rapport', label: t('tabs.rapport') },
-    { id: 'parametres', label: t('tabs.parametres') },
-    { id: 'comptes', label: t('tabs.comptes') },
+    { id: 'dashboard', icone: '📊', label: t('tabs.dashboard') },
+    { id: 'pointage', icone: '⏱️', label: t('tabs.pointage') },
+    { id: 'calendrier', icone: '📅', label: t('tabs.calendrier') },
+    { id: 'employes', icone: '👥', label: t('tabs.employes') },
+    { id: 'conges', icone: '🌴', label: t('tabs.conges') },
+    { id: 'rapport', icone: '💰', label: t('tabs.rapport') },
+    { id: 'parametres', icone: '⚙️', label: t('tabs.parametres') },
+    { id: 'comptes', icone: '🔑', label: t('tabs.comptes') },
   ];
 
   const ONGLETS_EMPLOYE = [
-    { id: 'pointage', label: t('tabs.pointage') },
-    { id: 'calendrier', label: t('tabs.calendrier') },
-    { id: 'conges', label: t('tabs.conges') },
+    { id: 'pointage', icone: '⏱️', label: t('tabs.pointage') },
+    { id: 'calendrier', icone: '📅', label: t('tabs.calendrier') },
+    { id: 'conges', icone: '🌴', label: t('tabs.conges') },
   ];
 
   if (chargement) {
@@ -108,31 +109,44 @@ export default function App() {
       <div className="app">
         <EnteteApp user={user} onOuvrirMonCompte={() => setOnglet('mon-compte')} />
 
-        <nav className="tabs">
-          {onglets.map((o) => (
+        <div className="app-corps">
+          <nav className={`sidebar ${menuOuvert ? 'sidebar-ouvert' : 'sidebar-replie'}`}>
             <button
-              key={o.id}
-              className={`tab ${ongletActif === o.id ? 'active' : ''}`}
-              onClick={() => setOnglet(o.id)}
+              type="button"
+              className="sidebar-toggle"
+              onClick={() => setMenuOuvert(!menuOuvert)}
+              title={t('tabs.reduireMenu')}
+              aria-label={t('tabs.reduireMenu')}
             >
-              {o.label}
+              ☰
             </button>
-          ))}
-        </nav>
+            {onglets.map((o) => (
+              <button
+                key={o.id}
+                className={`sidebar-item ${ongletActif === o.id ? 'active' : ''}`}
+                onClick={() => setOnglet(o.id)}
+                title={o.label}
+              >
+                <span className="sidebar-icone" aria-hidden="true">{o.icone}</span>
+                {menuOuvert && <span className="sidebar-label">{o.label}</span>}
+              </button>
+            ))}
+          </nav>
 
-        <main className="content">
-          <ErrorBoundary key={ongletActif}>
-            {ongletActif === 'dashboard' && <Dashboard />}
-            {ongletActif === 'pointage' && <Pointage />}
-            {ongletActif === 'calendrier' && <Calendrier />}
-            {ongletActif === 'employes' && <Employees />}
-            {ongletActif === 'conges' && <Conges />}
-            {ongletActif === 'rapport' && <Rapport />}
-            {ongletActif === 'parametres' && <Parametres />}
-            {ongletActif === 'comptes' && <Comptes />}
-            {ongletActif === 'mon-compte' && <MonCompte />}
-          </ErrorBoundary>
-        </main>
+          <main className="content">
+            <ErrorBoundary key={ongletActif}>
+              {ongletActif === 'dashboard' && <Dashboard />}
+              {ongletActif === 'pointage' && <Pointage />}
+              {ongletActif === 'calendrier' && <Calendrier />}
+              {ongletActif === 'employes' && <Employees />}
+              {ongletActif === 'conges' && <Conges />}
+              {ongletActif === 'rapport' && <Rapport />}
+              {ongletActif === 'parametres' && <Parametres />}
+              {ongletActif === 'comptes' && <Comptes />}
+              {ongletActif === 'mon-compte' && <MonCompte />}
+            </ErrorBoundary>
+          </main>
+        </div>
       </div>
     </EntrepriseProvider>
   );

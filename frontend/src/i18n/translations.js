@@ -46,6 +46,7 @@ export const TRADUCTIONS = {
       parametres: 'Parametres',
       comptes: 'Comptes',
       monCompte: 'Mon compte',
+      reduireMenu: 'Reduire/agrandir le menu',
     },
     login: {
       title: 'Connexion',
@@ -438,6 +439,7 @@ export const TRADUCTIONS = {
       parametres: 'Settings',
       comptes: 'Accounts',
       monCompte: 'My account',
+      reduireMenu: 'Collapse/expand menu',
     },
     login: {
       title: 'Login',
@@ -830,6 +832,7 @@ export const TRADUCTIONS = {
       parametres: 'הגדרות',
       comptes: 'חשבונות',
       monCompte: 'החשבון שלי',
+      reduireMenu: 'כווץ/הרחב את התפריט',
     },
     login: {
       title: 'התחברות',
