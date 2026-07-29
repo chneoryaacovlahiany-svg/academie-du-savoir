@@ -1124,4 +1124,19 @@ button.sortie:hover {
     padding: 4px;
     gap: 2px;
   }
+
+  /* Les petits menus (cloche, langue, devise) sont ancres au bouton qui les
+     ouvre via position:absolute: si ce bouton n'est pas pres du bord de
+     l'ecran (cas frequent sur mobile, plusieurs icones dans l'en-tete), le
+     panneau deborde hors de l'ecran au lieu de s'ouvrir vers l'interieur.
+     En position:fixed avec des marges fixes par rapport a l'ecran, le
+     panneau reste toujours entierement visible quel que soit l'icone. */
+  .notif-bell-panneau,
+  .selecteur-icone-panneau {
+    position: fixed;
+    top: 64px;
+    inset-inline: 12px;
+    width: auto;
+    max-width: none;
+  }
 }
