@@ -33,7 +33,7 @@ function EnteteApp({ user, onOuvrirMonCompte }) {
     <header className="app-header">
       <div className="app-header-identite">
         {entreprise.logo && <img src={entreprise.logo} alt="Logo" className="app-header-logo" />}
-        <div>
+        <div className="app-header-textes">
           <h1>{entreprise.nom || t('header.appName')}</h1>
           <p className="subtitle">{t('header.subtitle')}</p>
         </div>

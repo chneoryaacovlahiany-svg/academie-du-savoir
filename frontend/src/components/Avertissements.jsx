@@ -25,6 +25,7 @@ export default function Avertissements() {
       <p className="aide">
         {estAdmin ? t('parametres.avertissementsHistoriqueTitre') : t('monCompte.avertissementsAide')}
       </p>
+      <div className="table-scroll">
       <table>
         <thead>
           <tr>
@@ -56,6 +57,7 @@ export default function Avertissements() {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

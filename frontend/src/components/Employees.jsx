@@ -337,6 +337,7 @@ export default function Employees() {
           </h4>
           <p className="aide">{t('employees.horairesAide')}</p>
           {messageHoraire && <p className="confirmation">{messageHoraire}</p>}
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -386,6 +387,7 @@ export default function Employees() {
               ))}
             </tbody>
           </table>
+          </div>
           <div className="form-inline">
             <button onClick={enregistrerHoraires}>{t('common.save')}</button>
             <button className="secondary" onClick={() => setHoraireEmployeeId(null)}>

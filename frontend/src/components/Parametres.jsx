@@ -610,6 +610,7 @@ export default function Parametres() {
       <h3>{t('parametres.baremeTitre')}</h3>
       <p className="aide">{t('parametres.baremeAide')}</p>
       <form onSubmit={enregistrerBareme}>
+        <div className="table-scroll">
         <table>
           <thead>
             <tr>
@@ -647,6 +648,7 @@ export default function Parametres() {
             ))}
           </tbody>
         </table>
+        </div>
         <div className="actions-bareme">
           <button type="button" className="secondary" onClick={ajouterLigneBareme}>
             {t('parametres.ajouterLigne')}
@@ -682,6 +684,7 @@ export default function Parametres() {
         <button type="submit">{t('common.add')}</button>
       </form>
 
+      <div className="table-scroll">
       <table>
         <thead>
           <tr>
@@ -711,6 +714,7 @@ export default function Parametres() {
           )}
         </tbody>
       </table>
+      </div>
       </>
       )}
     </div>

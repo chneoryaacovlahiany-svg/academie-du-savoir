@@ -112,6 +112,7 @@ export default function Conges() {
 
       {erreur && <p className="erreur">{erreur}</p>}
 
+      <div className="table-scroll">
       <table>
         <thead>
           <tr>
@@ -163,6 +164,7 @@ export default function Conges() {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

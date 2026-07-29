@@ -130,6 +130,12 @@ body {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.app-header-textes {
+  min-width: 0;
 }
 
 .app-header-logo {
@@ -673,7 +679,7 @@ button.sortie:hover {
 .calendrier-entetes,
 .calendrier-grille {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -996,4 +1002,52 @@ button.sortie:hover {
   background: #eff6ff;
   color: #2563eb;
   font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .app {
+    padding: 12px;
+  }
+
+  .app-header {
+    padding: 14px 16px;
+  }
+
+  .app-header-logo {
+    height: 56px;
+    max-width: 130px;
+  }
+
+  .app-header h1 {
+    font-size: 20px;
+  }
+
+  .app-corps {
+    gap: 8px;
+  }
+
+  .sidebar-ouvert {
+    width: 180px;
+  }
+
+  .form-parametres {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-apercu {
+    height: 70px;
+    max-width: 140px;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  .calendrier-jour {
+    min-height: 44px;
+    padding: 4px;
+    gap: 2px;
+  }
 }

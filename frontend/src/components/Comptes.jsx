@@ -125,6 +125,7 @@ export default function Comptes() {
         )}
       </form>
 
+      <div className="table-scroll">
       <table>
         <thead>
           <tr>
@@ -162,6 +163,7 @@ export default function Comptes() {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }
