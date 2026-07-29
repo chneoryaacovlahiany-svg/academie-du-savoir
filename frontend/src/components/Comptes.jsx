@@ -9,6 +9,7 @@ export default function Comptes() {
   const [comptes, setComptes] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [form, setForm] = useState(COMPTE_VIDE);
+  const [editingId, setEditingId] = useState(null);
   const [erreur, setErreur] = useState('');
   const [message, setMessage] = useState('');
 
@@ -33,16 +34,40 @@ export default function Comptes() {
     setErreur('');
     setMessage('');
     try {
-      await api.createUser({
-        ...form,
+      const donnees = {
+        email: form.email,
+        role: form.role,
         employee_id: form.employee_id ? Number(form.employee_id) : null,
-      });
+      };
+      if (editingId) {
+        if (form.password) donnees.password = form.password;
+        await api.updateUser(editingId, donnees);
+        setMessage(t('comptes.compteModifie'));
+      } else {
+        await api.createUser({ ...donnees, password: form.password });
+        setMessage(t('comptes.compteCree'));
+      }
       setForm(COMPTE_VIDE);
-      setMessage(t('comptes.compteCree'));
+      setEditingId(null);
       charger();
     } catch (err) {
       setErreur(err.message);
     }
+  };
+
+  const handleEdit = (compte) => {
+    setEditingId(compte.id);
+    setForm({
+      email: compte.email,
+      password: '',
+      role: compte.role,
+      employee_id: compte.employee_id != null ? String(compte.employee_id) : '',
+    });
+  };
+
+  const annulerEdition = () => {
+    setEditingId(null);
+    setForm(COMPTE_VIDE);
   };
 
   const basculerActif = async (compte) => {
@@ -75,26 +100,29 @@ export default function Comptes() {
         <input
           name="password"
           type="password"
-          placeholder={t('comptes.motDePassePlaceholder')}
+          placeholder={editingId ? t('comptes.nouveauMotDePassePlaceholder') : t('comptes.motDePassePlaceholder')}
           value={form.password}
           onChange={handleChange}
-          required
+          required={!editingId}
         />
         <select name="role" value={form.role} onChange={handleChange}>
           <option value="employe">{t('comptes.roleEmploye')}</option>
           <option value="admin">{t('comptes.roleAdmin')}</option>
         </select>
-        {form.role === 'employe' && (
-          <select name="employee_id" value={form.employee_id} onChange={handleChange} required>
-            <option value="">{t('comptes.employeLieOption')}</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.prenom} {emp.nom}
-              </option>
-            ))}
-          </select>
+        <select name="employee_id" value={form.employee_id} onChange={handleChange} required={form.role === 'employe'}>
+          <option value="">{t('comptes.employeLieOption')}</option>
+          {employees.map((emp) => (
+            <option key={emp.id} value={emp.id}>
+              {emp.prenom} {emp.nom}
+            </option>
+          ))}
+        </select>
+        <button type="submit">{editingId ? t('common.edit') : t('comptes.creerCompte')}</button>
+        {editingId && (
+          <button type="button" className="secondary" onClick={annulerEdition}>
+            {t('common.cancel')}
+          </button>
         )}
-        <button type="submit">{t('comptes.creerCompte')}</button>
       </form>
 
       <table>
@@ -115,6 +143,7 @@ export default function Comptes() {
               <td>{c.employee ? `${c.employee.prenom} ${c.employee.nom}` : '-'}</td>
               <td>{c.actif ? t('common.active') : t('comptes.desactive')}</td>
               <td className="actions">
+                <button onClick={() => handleEdit(c)}>{t('common.edit')}</button>
                 <button className="secondary" onClick={() => basculerActif(c)}>
                   {c.actif ? t('comptes.desactiver') : t('comptes.reactiver')}
                 </button>
