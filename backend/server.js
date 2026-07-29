@@ -22,6 +22,7 @@ const entrepriseRouter = require('./routes/entreprise');
 const pushRouter = require('./routes/push');
 const avertissementsRouter = require('./routes/avertissements');
 const notificationsRouter = require('./routes/notifications');
+const fichesPaieRouter = require('./routes/fichesPaie');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -42,7 +43,7 @@ app.use('/api/users', requireAuth, requireAdmin, usersRouter);
 app.use('/api/employees', requireAuth, employeesRouter);
 app.use('/api/pointages', requireAuth, pointagesRouter);
 app.use('/api/conges', requireAuth, congesRouter);
-app.use('/api/rapport', requireAuth, rapportRouter);
+app.use('/api/rapport', requireAuth, requireAdmin, rapportRouter);
 app.use('/api/parametres', requireAuth, requireAdmin, parametresRouter);
 app.use('/api/bareme', requireAuth, requireAdmin, baremeRouter);
 app.use('/api/feries', requireAuth, requireAdmin, feriesRouter);
@@ -52,6 +53,7 @@ app.use('/api/entreprise', requireAuth, entrepriseRouter);
 app.use('/api/push', requireAuth, pushRouter);
 app.use('/api/avertissements', requireAuth, avertissementsRouter);
 app.use('/api/notifications', requireAuth, notificationsRouter);
+app.use('/api/fiches-paie', requireAuth, fichesPaieRouter);
 
 // En production, le build du frontend (frontend/dist) est servi directement
 // par ce meme serveur: un seul service a heberger, meme origine que l'API

@@ -68,6 +68,11 @@ export const api = {
     return request(`/rapport${qs ? `?${qs}` : ''}`);
   },
 
+  // Fiches de paie
+  getFichesPaie: (employee_id) => request(`/fiches-paie${employee_id ? `?employee_id=${employee_id}` : ''}`),
+  uploaderFichePaie: (data) => request('/fiches-paie', { method: 'POST', body: JSON.stringify(data) }),
+  supprimerFichePaie: (id) => request(`/fiches-paie/${id}`, { method: 'DELETE' }),
+
   // Parametres
   getParametres: () => request('/parametres'),
   updateParametres: (data) => request('/parametres', { method: 'PUT', body: JSON.stringify(data) }),

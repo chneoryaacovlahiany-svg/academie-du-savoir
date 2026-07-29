@@ -92,6 +92,7 @@ export default function App() {
     { id: 'pointage', icone: '⏱️', label: t('tabs.pointage') },
     { id: 'calendrier', icone: '📅', label: t('tabs.calendrier') },
     { id: 'conges', icone: '🌴', label: t('tabs.conges') },
+    { id: 'rapport', icone: '💰', label: t('tabs.fichesPaie') },
     { id: 'avertissements', icone: '⚠️', label: t('tabs.avertissements') },
   ];
 

@@ -135,6 +135,15 @@ db.exec(`
     lu INTEGER NOT NULL DEFAULT 0,
     date_creation TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS fiches_paie (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    employee_id INTEGER NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+    mois TEXT NOT NULL,
+    nom_fichier TEXT NOT NULL,
+    chemin_fichier TEXT NOT NULL,
+    date_upload TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 const colonnesEmployees = db.prepare("PRAGMA table_info(employees)").all().map((c) => c.name);

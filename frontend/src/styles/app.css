@@ -351,6 +351,23 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.bouton-lien {
+  display: inline-block;
+  padding: 9px 16px;
+  border-radius: 8px;
+  background: #6b7280;
+  color: white;
+  font-size: 14px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.bouton-lien:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
 button.secondary {
   background: #6b7280;
 }
