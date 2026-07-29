@@ -32,6 +32,8 @@ const CLES_BOOLEENNES = [
   'avertissements_email_actif',
   'email_conges_nouvelle_demande_actif',
   'email_conges_reponse_actif',
+  'notif_conges_nouvelle_demande_actif',
+  'notif_conges_reponse_actif',
 ];
 
 const CLES_MESSAGES_AVERTISSEMENT = [1, 2, 3, 4, 5].map((n) => `avertissements_retards_message_${n}`);

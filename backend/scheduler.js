@@ -31,6 +31,18 @@ async function envoyerPush(sub, payload) {
   }
 }
 
+// Envoie une notification push a tous les appareils abonnes d'un employe
+// donne. Reutilise pour les evenements ponctuels (conges) en plus des
+// rappels/avertissements automatiques.
+async function envoyerPushAEmploye(employeeId, titre, corps, type) {
+  const subs = db.prepare('SELECT * FROM push_subscriptions WHERE employee_id = ?').all(employeeId);
+  if (subs.length === 0) return;
+  const payload = JSON.stringify({ titre, corps, tag: `${type}-${employeeId}-${Date.now()}`, type, employeeId });
+  for (const sub of subs) {
+    await envoyerPush(sub, payload);
+  }
+}
+
 // Soustrait des minutes a une heure "HH:MM". Se bloque a 00:00 (sans passer a
 // la veille) si le resultat serait negatif: cas limite tres improbable en
 // pratique (planning commencant a moins de "avant_minutes" apres minuit).
@@ -288,5 +300,6 @@ module.exports = {
   verifierAvertissementsRetards,
   calculerEtEnvoyerAvertissements,
   envoyerAvertissementManuel,
+  envoyerPushAEmploye,
   NB_NIVEAUX_AVERTISSEMENT,
 };

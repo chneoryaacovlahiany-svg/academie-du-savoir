@@ -470,6 +470,22 @@ export default function Parametres() {
             onChange={(e) => handleParametreChange('notif_sortie_options_report', e.target.value)}
           />
         </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.notif_conges_nouvelle_demande_actif}
+            onChange={(e) => handleParametreCaseChange('notif_conges_nouvelle_demande_actif', e.target.checked)}
+          />
+          {t('parametres.notifCongesNouvelleDemandeLabel')}
+        </label>
+        <label className="champ-parametre champ-case">
+          <input
+            type="checkbox"
+            checked={!!parametres.notif_conges_reponse_actif}
+            onChange={(e) => handleParametreCaseChange('notif_conges_reponse_actif', e.target.checked)}
+          />
+          {t('parametres.notifCongesReponseLabel')}
+        </label>
         <button type="submit">{t('parametres.enregistrerParametres')}</button>
       </form>
       </>

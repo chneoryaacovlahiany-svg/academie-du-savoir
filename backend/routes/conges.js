@@ -5,6 +5,7 @@ const { chargerParametres } = require('../soldes');
 const { requireAdmin } = require('../middleware/auth');
 const { envoyerEmail } = require('../email');
 const { chargerInfosEntreprise } = require('./entreprise');
+const { envoyerPushAEmploye } = require('../scheduler');
 
 const router = express.Router();
 
@@ -91,6 +92,22 @@ router.post('/', (req, res) => {
       );
     }
   }
+  if (params.notif_conges_nouvelle_demande_actif) {
+    // Un admin ne peut recevoir de notification push que si son compte est
+    // lie a une fiche employe (meme mecanisme d'abonnement que les employes):
+    // sans ce lien, il n'y a aucun appareil connu ou envoyer la notification.
+    const adminsAvecEmploye = db
+      .prepare("SELECT DISTINCT employee_id FROM users WHERE role = 'admin' AND employee_id IS NOT NULL")
+      .all();
+    for (const { employee_id: adminEmployeeId } of adminsAvecEmploye) {
+      envoyerPushAEmploye(
+        adminEmployeeId,
+        'Pointeuse',
+        `${employee.prenom} ${employee.nom} a soumis une demande de conge du ${date_debut} au ${date_fin}.`,
+        'conge_nouvelle_demande'
+      );
+    }
+  }
 });
 
 router.put('/:id/statut', requireAdmin, (req, res) => {
@@ -107,14 +124,14 @@ router.put('/:id/statut', requireAdmin, (req, res) => {
   res.json(ajouterMontantMaladie(updated));
 
   const params = chargerParametres();
-  if (params.email_conges_reponse_actif && (statut === 'approuve' || statut === 'refuse')) {
+  if ((params.email_conges_reponse_actif || params.notif_conges_reponse_actif) && (statut === 'approuve' || statut === 'refuse')) {
     const employee = db.prepare('SELECT * FROM employees WHERE id = ?').get(conge.employee_id);
-    if (employee?.email) {
-      envoyerEmail(
-        employee.email,
-        'Reponse a votre demande de conge',
-        `Votre demande de conge (${LIBELLES_TYPE[conge.type]}) du ${conge.date_debut} au ${conge.date_fin} a ete ${LIBELLES_STATUT[statut]}.`
-      );
+    const texte = `Votre demande de conge (${LIBELLES_TYPE[conge.type]}) du ${conge.date_debut} au ${conge.date_fin} a ete ${LIBELLES_STATUT[statut]}.`;
+    if (params.email_conges_reponse_actif && employee?.email) {
+      envoyerEmail(employee.email, 'Reponse a votre demande de conge', texte);
+    }
+    if (params.notif_conges_reponse_actif && employee) {
+      envoyerPushAEmploye(employee.id, 'Pointeuse', texte, 'conge_reponse');
     }
   }
 });

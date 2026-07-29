@@ -199,6 +199,8 @@ const parametresDefaut = {
   avertissements_email_actif: '0',
   email_conges_nouvelle_demande_actif: '0',
   email_conges_reponse_actif: '0',
+  notif_conges_nouvelle_demande_actif: '0',
+  notif_conges_reponse_actif: '0',
 };
 const insererParametre = db.prepare('INSERT OR IGNORE INTO parametres (cle, valeur) VALUES (?, ?)');
 for (const [cle, valeur] of Object.entries(parametresDefaut)) {
