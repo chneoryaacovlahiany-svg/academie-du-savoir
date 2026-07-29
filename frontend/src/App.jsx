@@ -4,6 +4,7 @@ import Employees from './components/Employees.jsx';
 import Pointage from './components/Pointage.jsx';
 import Calendrier from './components/Calendrier.jsx';
 import Conges from './components/Conges.jsx';
+import Avertissements from './components/Avertissements.jsx';
 import Rapport from './components/Rapport.jsx';
 import Parametres from './components/Parametres.jsx';
 import Comptes from './components/Comptes.jsx';
@@ -82,6 +83,7 @@ export default function App() {
     { id: 'employes', icone: '👥', label: t('tabs.employes') },
     { id: 'conges', icone: '🌴', label: t('tabs.conges') },
     { id: 'rapport', icone: '💰', label: t('tabs.rapport') },
+    { id: 'avertissements', icone: '⚠️', label: t('tabs.avertissements') },
     { id: 'parametres', icone: '⚙️', label: t('tabs.parametres') },
     { id: 'comptes', icone: '🔑', label: t('tabs.comptes') },
   ];
@@ -90,6 +92,7 @@ export default function App() {
     { id: 'pointage', icone: '⏱️', label: t('tabs.pointage') },
     { id: 'calendrier', icone: '📅', label: t('tabs.calendrier') },
     { id: 'conges', icone: '🌴', label: t('tabs.conges') },
+    { id: 'avertissements', icone: '⚠️', label: t('tabs.avertissements') },
   ];
 
   if (chargement) {
@@ -141,6 +144,7 @@ export default function App() {
               {ongletActif === 'employes' && <Employees />}
               {ongletActif === 'conges' && <Conges />}
               {ongletActif === 'rapport' && <Rapport />}
+              {ongletActif === 'avertissements' && <Avertissements />}
               {ongletActif === 'parametres' && <Parametres />}
               {ongletActif === 'comptes' && <Comptes />}
               {ongletActif === 'mon-compte' && <MonCompte />}

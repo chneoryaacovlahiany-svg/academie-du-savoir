@@ -7,11 +7,10 @@ const TAILLE_MAX_LOGO = 360;
 
 export default function Parametres() {
   const { entreprise, rafraichirEntreprise } = useEntreprise();
-  const { t, locale } = useLangue();
+  const { t } = useLangue();
   const [parametres, setParametres] = useState(null);
   const [bareme, setBareme] = useState([]);
   const [feries, setFeries] = useState([]);
-  const [avertissements, setAvertissements] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [envoiManuel, setEnvoiManuel] = useState({ employee_id: '', niveau: 1, message: '' });
   const [messageEnvoiManuel, setMessageEnvoiManuel] = useState('');
@@ -112,17 +111,15 @@ export default function Parametres() {
   };
 
   const charger = async () => {
-    const [p, b, f, a, e] = await Promise.all([
+    const [p, b, f, e] = await Promise.all([
       api.getParametres(),
       api.getBareme(),
       api.getFeries(annee),
-      api.getAvertissements(),
       api.getEmployees(),
     ]);
     setParametres(p);
     setBareme(b);
     setFeries(f);
-    setAvertissements(a);
     setEmployees(e.filter((emp) => emp.actif));
   };
 
@@ -570,35 +567,7 @@ export default function Parametres() {
         </label>
         <button type="submit">{t('parametres.envoiManuelBouton')}</button>
       </form>
-
-      <h4>{t('parametres.avertissementsHistoriqueTitre')}</h4>
-      <table>
-        <thead>
-          <tr>
-            <th>{t('parametres.colDateEnvoi')}</th>
-            <th>{t('parametres.colEmploye')}</th>
-            <th>{t('parametres.colNiveau')}</th>
-            <th>{t('parametres.colMessage')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {avertissements.map((a) => (
-            <tr key={a.id}>
-              <td>{new Date(a.date_envoi.replace(' ', 'T') + 'Z').toLocaleString(locale)}</td>
-              <td>{a.prenom} {a.nom}</td>
-              <td>{a.niveau}</td>
-              <td>{a.message}</td>
-            </tr>
-          ))}
-          {avertissements.length === 0 && (
-            <tr>
-              <td colSpan={4} className="vide">
-                {t('parametres.aucunAvertissement')}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      <p className="aide">{t('parametres.avertissementsHistoriqueRenvoi')}</p>
       </>
       )}
 
