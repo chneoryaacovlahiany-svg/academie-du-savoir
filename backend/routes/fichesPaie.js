@@ -55,15 +55,39 @@ router.post('/', requireAdmin, (req, res) => {
   res.status(201).json({ id: Number(resultat.lastInsertRowid), employee_id, mois, nom_fichier });
 });
 
-router.get('/:id/telecharger', (req, res) => {
+// Meme controle d'acces que le telechargement, mais Content-Disposition
+// "inline" plutot que "attachment": ouvre le PDF dans un nouvel onglet au
+// lieu de forcer une sauvegarde sur disque.
+function chargerFicheAutorisee(req, res) {
   const fiche = db.prepare('SELECT * FROM fiches_paie WHERE id = ?').get(req.params.id);
-  if (!fiche) return res.status(404).json({ error: 'Fiche introuvable' });
+  if (!fiche) {
+    res.status(404).json({ error: 'Fiche introuvable' });
+    return null;
+  }
   if (req.user.role === 'employe' && fiche.employee_id !== req.user.employee_id) {
-    return res.status(403).json({ error: 'Acces refuse' });
+    res.status(403).json({ error: 'Acces refuse' });
+    return null;
   }
   const cheminComplet = path.join(dossierFichesPaie, fiche.chemin_fichier);
-  if (!fs.existsSync(cheminComplet)) return res.status(404).json({ error: 'Fichier introuvable sur le serveur' });
-  res.download(cheminComplet, fiche.nom_fichier);
+  if (!fs.existsSync(cheminComplet)) {
+    res.status(404).json({ error: 'Fichier introuvable sur le serveur' });
+    return null;
+  }
+  return { fiche, cheminComplet };
+}
+
+router.get('/:id/telecharger', (req, res) => {
+  const trouve = chargerFicheAutorisee(req, res);
+  if (!trouve) return;
+  res.download(trouve.cheminComplet, trouve.fiche.nom_fichier);
+});
+
+router.get('/:id/visualiser', (req, res) => {
+  const trouve = chargerFicheAutorisee(req, res);
+  if (!trouve) return;
+  res.setHeader('Content-Disposition', `inline; filename="${trouve.fiche.nom_fichier}"`);
+  res.type('application/pdf');
+  res.sendFile(trouve.cheminComplet);
 });
 
 router.delete('/:id', requireAdmin, (req, res) => {

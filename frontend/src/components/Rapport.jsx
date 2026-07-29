@@ -311,6 +311,14 @@ export default function Rapport() {
                 <td>{f.nom_fichier}</td>
                 <td>{new Date(f.date_upload.replace(' ', 'T') + 'Z').toLocaleString(locale)}</td>
                 <td className="actions">
+                  <a
+                    className="bouton-lien"
+                    href={`/api/fiches-paie/${f.id}/visualiser`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('fichesPaie.visualiser')}
+                  </a>
                   <a className="bouton-lien" href={`/api/fiches-paie/${f.id}/telecharger`}>
                     {t('fichesPaie.telecharger')}
                   </a>
