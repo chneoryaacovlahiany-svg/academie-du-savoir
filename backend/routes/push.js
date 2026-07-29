@@ -2,11 +2,22 @@ const express = require('express');
 const db = require('../db');
 const { vapidKeys } = require('../vapid');
 const { dateLocale } = require('../calculs');
+const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
 router.get('/cle-publique', (req, res) => {
   res.json({ cle_publique: vapidKeys.publicKey });
+});
+
+// Nombre d'appareils reellement abonnes par employe, reserve aux admins: sert
+// a diagnostiquer pourquoi un employe ne recoit pas de rappel serveur (permission
+// de notification accordee cote navigateur ne veut pas dire abonnement enregistre;
+// un meme appareil ne garde qu'un seul abonnement actif, qui peut se faire
+// reattribuer d'un compte a l'autre si plusieurs sont testes dessus).
+router.get('/abonnements', requireAdmin, (req, res) => {
+  const rows = db.prepare('SELECT employee_id, COUNT(*) as nb FROM push_subscriptions GROUP BY employee_id').all();
+  res.json(rows);
 });
 
 // Enregistre (ou met a jour) l'abonnement push de l'employe connecte pour cet

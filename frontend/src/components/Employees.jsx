@@ -44,11 +44,16 @@ export default function Employees() {
   const [horaireEmployeeId, setHoraireEmployeeId] = useState(null);
   const [horaireLignes, setHoraireLignes] = useState([]);
   const [messageHoraire, setMessageHoraire] = useState('');
+  const [abonnementsPush, setAbonnementsPush] = useState({});
 
   const charger = () => api.getEmployees().then(setEmployees).catch((e) => setErreur(e.message));
 
   useEffect(() => {
     charger();
+    api
+      .getAbonnementsPush()
+      .then((rows) => setAbonnementsPush(Object.fromEntries(rows.map((r) => [r.employee_id, r.nb]))))
+      .catch(() => {});
   }, []);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -272,6 +277,7 @@ export default function Employees() {
             <th>{t('employees.colPause')}</th>
             <th>{t('employees.colHeuresSup')}</th>
             <th>{t('employees.colStatut')}</th>
+            <th>{t('employees.colPush')}</th>
             <th></th>
           </tr>
         </thead>
@@ -294,6 +300,9 @@ export default function Employees() {
               <td>{emp.pause_minutes || 0} {t('common.minAbrev')}</td>
               <td>{emp.droit_heures_sup ? t('employees.autorisees') : t('employees.nonAutorisees')}</td>
               <td>{emp.actif ? t('common.active') : t('common.inactive')}</td>
+              <td className={abonnementsPush[emp.id] ? 'push-actif' : 'push-inactif'}>
+                {abonnementsPush[emp.id] ? `🔔 ${abonnementsPush[emp.id]}` : t('employees.pushAucun')}
+              </td>
               <td className="actions">
                 <button onClick={() => handleEdit(emp)}>{t('common.edit')}</button>
                 <button className="secondary" onClick={() => ouvrirHoraires(emp)}>
@@ -307,7 +316,7 @@ export default function Employees() {
           ))}
           {employees.length === 0 && (
             <tr>
-              <td colSpan={13} className="vide">
+              <td colSpan={14} className="vide">
                 {t('employees.aucunEmploye')}
               </td>
             </tr>
