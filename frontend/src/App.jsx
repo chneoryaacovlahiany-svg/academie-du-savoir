@@ -11,12 +11,11 @@ import MonCompte from './components/MonCompte.jsx';
 import Login from './components/Login.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import NotificationBell from './components/NotificationBell.jsx';
+import SelecteurIcone from './components/SelecteurIcone.jsx';
 import { DEVISES, useDevise } from './DeviseContext.jsx';
 import { useAuth } from './AuthContext.jsx';
 import { EntrepriseProvider, useEntreprise } from './EntrepriseContext.jsx';
 import { useLangue, LANGUES } from './LangueContext.jsx';
-
-const CLES_DEVISE = { EUR: 'deviseEuro', USD: 'deviseDollar', ILS: 'deviseShekel' };
 
 function initialesUtilisateur(user) {
   if (user?.employee) return `${user.employee.prenom[0]}${user.employee.nom[0]}`.toUpperCase();
@@ -37,38 +36,32 @@ function EnteteApp({ user, onOuvrirMonCompte }) {
           <p className="subtitle">{t('header.subtitle')}</p>
         </div>
       </div>
-      <div className="selecteurs-header">
-        <div className="app-header-actions">
-          <NotificationBell />
-          <button
-            type="button"
-            className="avatar-utilisateur"
-            onClick={onOuvrirMonCompte}
-            title={t('tabs.monCompte')}
-          >
-            {initialesUtilisateur(user)}
-          </button>
-        </div>
-        <label className="selecteur-devise">
-          {t('header.langue')}{' '}
-          <select value={langue} onChange={(e) => changerLangue(e.target.value)}>
-            {LANGUES.map((l) => (
-              <option key={l.code} value={l.code}>
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="selecteur-devise">
-          {t('header.devise')}{' '}
-          <select value={devise.code} onChange={(e) => changerDevise(e.target.value)}>
-            {DEVISES.map((d) => (
-              <option key={d.code} value={d.code}>
-                {t(`common.${CLES_DEVISE[d.code]}`)}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="app-header-actions">
+        <SelecteurIcone
+          icone="🌐"
+          titre={t('header.langue')}
+          valeurAffichee={langue.toUpperCase()}
+          valeurActuelle={langue}
+          onChanger={changerLangue}
+          options={LANGUES.map((l) => ({ value: l.code, label: l.label }))}
+        />
+        <SelecteurIcone
+          icone="💱"
+          titre={t('header.devise')}
+          valeurAffichee={devise.symbole}
+          valeurActuelle={devise.code}
+          onChanger={changerDevise}
+          options={DEVISES.map((d) => ({ value: d.code, label: `${d.symbole} ${t(`common.${{ EUR: 'deviseEuro', USD: 'deviseDollar', ILS: 'deviseShekel' }[d.code]}`)}` }))}
+        />
+        <NotificationBell />
+        <button
+          type="button"
+          className="avatar-utilisateur"
+          onClick={onOuvrirMonCompte}
+          title={t('tabs.monCompte')}
+        >
+          {initialesUtilisateur(user)}
+        </button>
       </div>
     </header>
   );

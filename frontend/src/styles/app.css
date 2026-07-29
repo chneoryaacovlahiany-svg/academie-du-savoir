@@ -73,13 +73,6 @@ body {
   white-space: nowrap;
 }
 
-.selecteurs-header {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 6px;
-}
-
 .selecteur-langue-login {
   display: flex;
   justify-content: flex-end;
@@ -820,4 +813,60 @@ button.sortie:hover {
   margin-top: 4px;
   font-size: 11px;
   color: #6b7280;
+}
+
+.selecteur-icone-conteneur {
+  position: relative;
+}
+
+.selecteur-icone-bouton {
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 19px;
+  border: 1px solid #dbeafe;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.selecteur-icone-panneau {
+  position: absolute;
+  top: 46px;
+  inset-inline-end: 0;
+  min-width: 160px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  padding: 6px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.selecteur-icone-option {
+  border: none;
+  background: transparent;
+  text-align: start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.selecteur-icone-option:hover {
+  background: #f3f4f6;
+}
+
+.selecteur-icone-option.active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 700;
 }
