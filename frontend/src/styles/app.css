@@ -1139,4 +1139,31 @@ button.sortie:hover {
     width: auto;
     max-width: none;
   }
+
+  /* Menu horizontal (comme l'ancienne barre d'onglets) au lieu du menu
+     lateral: sur un ecran de telephone, une colonne a cote du contenu
+     laisse trop peu de place; une barre en haut, avec defilement
+     horizontal si necessaire, est plus adaptee. Inchange sur tablette/PC. */
+  .app-corps {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    overflow-x: auto;
+    width: auto !important;
+    max-width: 100%;
+  }
+
+  .sidebar-toggle {
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .sidebar-item {
+    width: auto;
+    flex-shrink: 0;
+  }
 }
